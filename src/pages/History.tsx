@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP } from '@/lib/format';
 import { EntryType } from '@/types';
-import { ArrowDownCircle, CreditCard, Banknote, Trash2, CalendarDays } from 'lucide-react';
+import { ArrowDownCircle, CreditCard, Banknote, Trash2, CalendarDays, FileDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function History() {
-  const { state, deleteEntry } = useApp();
+  const { state, deleteEntry, depositsTotal, meta, efectivoReal, diferencia, status } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const dateStr = selectedDate.toISOString().split('T')[0];
@@ -27,10 +27,70 @@ export default function History() {
 
   const dayTotal = filtered.reduce((s, e) => s + e.amount, 0);
 
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const primary = [26, 188, 156]; // teal
+
+    // Header
+    doc.setFillColor(primary[0], primary[1], primary[2]);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text('Control de Caja', 14, 16);
+    doc.setFontSize(11);
+    doc.text(`Reporte: ${format(selectedDate, "d 'de' MMMM yyyy", { locale: es })}`, 14, 26);
+
+    // Summary
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(12);
+    let y = 45;
+    doc.text('Resumen de Conciliación', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    const summaryData = [
+      ['Monto Z', formatCLP(state.zAmount)],
+      ['Propinas', formatCLP(state.tipsTotal)],
+      ['Meta (Z - Propinas)', formatCLP(meta)],
+      ['Depósitos', formatCLP(depositsTotal)],
+      ['Gaveta', formatCLP(state.cashDrawer)],
+      ['Efectivo Real', formatCLP(efectivoReal)],
+      ['Diferencia', formatCLP(diferencia)],
+      ['Estado', status === 'cuadrada' ? 'CUADRADA' : status === 'sobrante' ? 'SOBRANTE' : 'FALTANTE'],
+    ];
+    summaryData.forEach(([label, value]) => {
+      doc.text(`${label}: ${value}`, 14, y);
+      y += 6;
+    });
+
+    // Table
+    y += 6;
+    const tableData = filtered.map(e => [
+      e.time,
+      labels[e.type],
+      formatCLP(e.amount),
+      e.cashier || e.company || '-',
+      e.observation || '-',
+    ]);
+
+    (doc as any).autoTable({
+      startY: y,
+      head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Observación']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: primary, textColor: [255, 255, 255] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`caja-${dateStr}.pdf`);
+  };
+
   return (
     <div className="space-y-4 pt-2 max-w-lg mx-auto">
       {/* Date picker */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="rounded-3xl gap-2 h-12 flex-1 justify-start bg-card border-border">
@@ -47,6 +107,12 @@ export default function History() {
             />
           </PopoverContent>
         </Popover>
+        {filtered.length > 0 && (
+          <Button variant="outline" onClick={exportPDF} className="rounded-3xl h-12 gap-2 bg-card border-border">
+            <FileDown className="w-4 h-4 text-primary" />
+            PDF
+          </Button>
+        )}
       </div>
 
       {/* Summary */}
