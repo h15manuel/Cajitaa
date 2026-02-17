@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
-import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, startOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DayShift } from '@/types';
 
@@ -24,12 +23,19 @@ export default function Shifts() {
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Pad start of month for grid alignment (week starts Monday)
-  const firstDayOfWeek = (getDay(monthStart) + 6) % 7; // 0=Mon
+  const firstDayOfWeek = (getDay(monthStart) + 6) % 7;
   const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => null);
 
+  const getDayShift = (dateStr: string): DayShift | undefined => {
+    return state.shifts.find(s => s.date === dateStr);
+  };
+
   const getShift = (dateStr: string): DayShift['shift'] => {
-    return state.shifts.find(s => s.date === dateStr)?.shift || 'none';
+    return getDayShift(dateStr)?.shift || 'none';
+  };
+
+  const getHours = (dateStr: string): number => {
+    return getDayShift(dateStr)?.hours || 7.5;
   };
 
   const toggleShift = (dateStr: string) => {
@@ -39,7 +45,18 @@ export default function Shifts() {
     setState(s => {
       const filtered = s.shifts.filter(sh => sh.date !== dateStr);
       if (next === 'none') return { ...s, shifts: filtered };
-      return { ...s, shifts: [...filtered, { date: dateStr, shift: next }] };
+      return { ...s, shifts: [...filtered, { date: dateStr, shift: next, hours: 7.5 }] };
+    });
+  };
+
+  const toggleHours = (e: React.MouseEvent, dateStr: string) => {
+    e.stopPropagation();
+    setState(s => {
+      const shifts = s.shifts.map(sh => {
+        if (sh.date !== dateStr) return sh;
+        return { ...sh, hours: (sh.hours === 6.5 ? 7.5 : 6.5) as 7.5 | 6.5 };
+      });
+      return { ...s, shifts };
     });
   };
 
@@ -69,11 +86,10 @@ export default function Shifts() {
         hoursAccum = 0;
       } else {
         if (cycleStart === null) cycleStart = s.date;
-        hoursAccum += state.shiftDuration;
+        hoursAccum += (s.hours || 7.5);
       }
     }
 
-    // Open cycle (no closing free day yet)
     if (cycleStart !== null && hoursAccum > 0) {
       result.push({
         start: cycleStart,
@@ -84,13 +100,13 @@ export default function Shifts() {
     }
 
     return result;
-  }, [state.shifts, state.weeklyHours, state.shiftDuration]);
+  }, [state.shifts, state.weeklyHours]);
 
   return (
     <div className="space-y-4 pt-2 max-w-lg mx-auto">
-      {/* Config */}
-      <div className="m3-surface p-4 flex gap-3 flex-wrap">
-        <div className="flex-1 min-w-[120px]">
+      {/* Config - solo jornada semanal */}
+      <div className="m3-surface p-4">
+        <div className="min-w-[120px]">
           <p className="text-xs text-muted-foreground mb-1">Jornada semanal</p>
           <select
             value={state.weeklyHours}
@@ -102,17 +118,9 @@ export default function Shifts() {
             <option value={40}>40 horas</option>
           </select>
         </div>
-        <div className="flex-1 min-w-[120px]">
-          <p className="text-xs text-muted-foreground mb-1">Duración turno</p>
-          <select
-            value={state.shiftDuration}
-            onChange={e => setState(s => ({ ...s, shiftDuration: Number(e.target.value) as any }))}
-            className="w-full h-9 rounded-2xl bg-secondary border border-border px-3 text-sm text-foreground"
-          >
-            <option value={7.5}>7.5 horas</option>
-            <option value={6.5}>6.5 horas</option>
-          </select>
-        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Toca un día para asignar turno. Toca las horas (7.5/6.5) para cambiar la duración de ese día.
+        </p>
       </div>
 
       {/* Month nav */}
@@ -142,6 +150,8 @@ export default function Shifts() {
             const shift = getShift(dateStr);
             const cfg = shiftConfig[shift];
             const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
+            const isWorkShift = cfg.hours;
+            const dayHours = getHours(dateStr);
             return (
               <button
                 key={dateStr}
@@ -152,6 +162,14 @@ export default function Shifts() {
               >
                 <span className="text-[10px] opacity-70">{format(day, 'd')}</span>
                 {cfg.short && <span className="text-[10px] font-bold">{cfg.short}</span>}
+                {isWorkShift && shift !== 'none' && (
+                  <span
+                    onClick={(e) => toggleHours(e, dateStr)}
+                    className="text-[8px] opacity-80 underline cursor-pointer"
+                  >
+                    {dayHours}h
+                  </span>
+                )}
               </button>
             );
           })}

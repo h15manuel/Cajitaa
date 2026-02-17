@@ -31,6 +31,7 @@ export interface Vehicle {
 export interface DayShift {
   date: string;
   shift: 'morning' | 'afternoon' | 'night' | 'free' | 'none';
+  hours?: 7.5 | 6.5; // per-day duration, defaults to 7.5
 }
 
 export interface AppState {
@@ -43,6 +44,7 @@ export interface AppState {
   shifts: DayShift[];
   shieldMode: boolean;
   weeklyHours: 44 | 42 | 40;
+  /** @deprecated Use per-day hours in DayShift instead */
   shiftDuration: 7.5 | 6.5;
 }
 
