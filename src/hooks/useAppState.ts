@@ -25,7 +25,37 @@ export function useAppState() {
   const toggleShield = useCallback(() => setState(s => ({ ...s, shieldMode: !s.shieldMode })), []);
 
   const closeShift = useCallback(() => {
-    setState(s => ({ ...s, zAmount: 0, tipsTotal: 0, cashDrawer: 0, entries: [] }));
+    setState(s => {
+      const depTotal = s.entries.filter(e => e.type === 'DEPOSIT').reduce((sum, e) => sum + e.amount, 0);
+      const m = s.zAmount - s.tipsTotal;
+      const real = depTotal + s.cashDrawer;
+      const diff = real - m;
+      const st = diff === 0 ? 'cuadrada' : diff > 0 ? 'sobrante' : 'faltante';
+
+      const record = {
+        id: crypto.randomUUID(),
+        closedAt: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0],
+        zAmount: s.zAmount,
+        tipsTotal: s.tipsTotal,
+        cashDrawer: s.cashDrawer,
+        depositsTotal: depTotal,
+        efectivoReal: real,
+        meta: m,
+        diferencia: diff,
+        status: st as 'cuadrada' | 'sobrante' | 'faltante',
+        entries: [...s.entries],
+      };
+
+      return {
+        ...s,
+        zAmount: 0,
+        tipsTotal: 0,
+        cashDrawer: 0,
+        entries: [],
+        shiftHistory: [...s.shiftHistory, record],
+      };
+    });
   }, []);
 
   const addEntry = useCallback((entry: CashEntry) => {

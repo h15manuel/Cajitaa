@@ -28,6 +28,21 @@ export interface Vehicle {
   companyId: string;
 }
 
+export interface ShiftRecord {
+  id: string;
+  closedAt: string; // ISO string
+  date: string; // shift date
+  zAmount: number;
+  tipsTotal: number;
+  cashDrawer: number;
+  depositsTotal: number;
+  efectivoReal: number;
+  meta: number;
+  diferencia: number;
+  status: 'cuadrada' | 'sobrante' | 'faltante';
+  entries: CashEntry[];
+}
+
 export interface DayShift {
   date: string;
   shift: 'morning' | 'afternoon' | 'night' | 'free' | 'none';
@@ -42,6 +57,7 @@ export interface AppState {
   companies: Company[];
   vehicles: Vehicle[];
   shifts: DayShift[];
+  shiftHistory: ShiftRecord[];
   shieldMode: boolean;
   weeklyHours: 44 | 42 | 40;
   /** @deprecated Use per-day hours in DayShift instead */
@@ -56,6 +72,7 @@ export const defaultAppState: AppState = {
   companies: [],
   vehicles: [],
   shifts: [],
+  shiftHistory: [],
   shieldMode: false,
   weeklyHours: 44,
   shiftDuration: 7.5,
