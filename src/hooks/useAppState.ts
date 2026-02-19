@@ -25,7 +25,7 @@ export function useAppState() {
   const toggleShield = useCallback(() => setState(s => ({ ...s, shieldMode: !s.shieldMode })), []);
 
   const closeShift = useCallback(() => {
-    setState(s => ({ ...s, zAmount: 0, tipsTotal: 0, cashDrawer: 0 }));
+    setState(s => ({ ...s, zAmount: 0, tipsTotal: 0, cashDrawer: 0, entries: [] }));
   }, []);
 
   const addEntry = useCallback((entry: CashEntry) => {
