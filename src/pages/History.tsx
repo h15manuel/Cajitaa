@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP } from '@/lib/format';
 import { EntryType, ShiftRecord } from '@/types';
-import { ArrowDownCircle, CreditCard, Banknote, Trash2, CalendarDays, FileDown, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { ArrowDownCircle, CreditCard, Banknote, Trash2, CalendarDays, FileDown, ChevronDown, ChevronUp, Clock, Share2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,37 @@ export default function History() {
 
   const statusLabels = { cuadrada: 'CUADRADA', sobrante: 'SOBRANTE', faltante: 'FALTANTE' };
   const statusColors = { cuadrada: 'text-green-500', sobrante: 'text-blue-500', faltante: 'text-destructive' };
+
+  const shareWhatsApp = (shift: ShiftRecord) => {
+    const closed = format(new Date(shift.closedAt), "d/MM/yyyy HH:mm", { locale: es });
+    const lines = [
+      `📋 *Cierre de Turno*`,
+      `📅 ${closed}`,
+      ``,
+      `💰 *Monto Z:* ${formatCLP(shift.zAmount)}`,
+      `🪙 *Propinas:* ${formatCLP(shift.tipsTotal)}`,
+      `🎯 *Meta:* ${formatCLP(shift.meta)}`,
+      ``,
+      `📥 *Depósitos:* ${formatCLP(shift.depositsTotal)}`,
+      `🗄️ *Gaveta:* ${formatCLP(shift.cashDrawer)}`,
+      `💵 *Efectivo Real:* ${formatCLP(shift.efectivoReal)}`,
+      ``,
+      `📊 *Diferencia:* ${formatCLP(shift.diferencia)}`,
+      `✅ *Estado:* ${statusLabels[shift.status]}`,
+    ];
+
+    if (shift.entries.length > 0) {
+      lines.push(``, `📝 *Movimientos (${shift.entries.length}):*`);
+      shift.entries.forEach(e => {
+        const label = labels[e.type as EntryType] || e.type;
+        const who = e.cashier || e.company || '';
+        lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}`);
+      });
+    }
+
+    const text = encodeURIComponent(lines.join('\n'));
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
 
   const exportPDF = async () => {
     const { default: jsPDF } = await import('jspdf');
@@ -199,6 +230,16 @@ export default function History() {
                   <p className="text-sm font-bold text-foreground">{formatCLP(shift.cashDrawer)}</p>
                 </div>
               </div>
+
+              {/* Share button */}
+              <Button
+                variant="outline"
+                onClick={() => shareWhatsApp(shift)}
+                className="w-full rounded-2xl gap-2 bg-secondary/50 border-border"
+              >
+                <Share2 className="w-4 h-4 text-green-500" />
+                <span className="text-foreground text-sm">Compartir por WhatsApp</span>
+              </Button>
 
               {/* Entries */}
               {shift.entries.length > 0 && (
