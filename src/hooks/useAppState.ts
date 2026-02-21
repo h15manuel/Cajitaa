@@ -32,10 +32,14 @@ export function useAppState() {
       const diff = real - m;
       const st = diff === 0 ? 'cuadrada' : diff > 0 ? 'sobrante' : 'faltante';
 
+      // Shift date = date of first entry (first deposit starts the shift)
+      const firstEntry = s.entries.length > 0 ? s.entries[0] : null;
+      const shiftDate = firstEntry ? firstEntry.date : new Date().toISOString().split('T')[0];
+
       const record = {
         id: crypto.randomUUID(),
         closedAt: new Date().toISOString(),
-        date: new Date().toISOString().split('T')[0],
+        date: shiftDate,
         zAmount: s.zAmount,
         tipsTotal: s.tipsTotal,
         cashDrawer: s.cashDrawer,
