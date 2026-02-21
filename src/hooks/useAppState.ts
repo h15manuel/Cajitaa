@@ -68,7 +68,14 @@ export function useAppState() {
       const tipsTotal = newEntries
         .filter(e => e.type === 'TIP')
         .reduce((sum, e) => sum + e.amount, 0);
-      return { ...s, entries: newEntries, tipsTotal };
+
+      // Auto-discount deposit from cash drawer if drawer has money
+      let newCashDrawer = s.cashDrawer;
+      if (entry.type === 'DEPOSIT' && s.cashDrawer > 0) {
+        newCashDrawer = Math.max(0, s.cashDrawer - entry.amount);
+      }
+
+      return { ...s, entries: newEntries, tipsTotal, cashDrawer: newCashDrawer };
     });
   }, []);
 
