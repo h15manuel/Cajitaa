@@ -69,9 +69,9 @@ export function useAppState() {
         .filter(e => e.type === 'TIP')
         .reduce((sum, e) => sum + e.amount, 0);
 
-      // Auto-discount deposit from cash drawer if drawer has money
+      // Auto-discount from cash drawer for deposits and tips
       let newCashDrawer = s.cashDrawer;
-      if (entry.type === 'DEPOSIT' && s.cashDrawer > 0) {
+      if ((entry.type === 'DEPOSIT' || entry.type === 'TIP') && s.cashDrawer > 0) {
         newCashDrawer = Math.max(0, s.cashDrawer - entry.amount);
       }
 
