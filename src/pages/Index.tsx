@@ -137,12 +137,12 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Today's entries */}
-      {todayEntries.length > 0 && (
+      {/* Today's entries (non-credit) */}
+      {todayEntries.filter(e => e.type !== EntryType.CREDIT).length > 0 && (
         <div className="m3-surface p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Movimientos de Hoy</p>
           <div className="space-y-2">
-            {todayEntries.slice(-5).reverse().map(entry => {
+            {todayEntries.filter(e => e.type !== EntryType.CREDIT).slice(-5).reverse().map(entry => {
               const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
               const colors = { DEPOSIT: 'text-primary', TIP: 'text-warning', CREDIT: 'text-info' };
               const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
@@ -167,6 +167,68 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Credits grouped by 6 */}
+      {(() => {
+        const credits = state.entries.filter(e => e.type === EntryType.CREDIT);
+        if (credits.length === 0) return null;
+
+        const groups: CashEntry[][] = [];
+        for (let i = 0; i < credits.length; i += 6) {
+          groups.push(credits.slice(i, i + 6));
+        }
+        const grandTotal = credits.reduce((sum, e) => sum + e.amount, 0);
+
+        return (
+          <div className="m3-surface p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+              Créditos · {credits.length} registros
+            </p>
+            <div className="space-y-4">
+              {groups.map((group, gi) => {
+                const subtotal = group.reduce((sum, e) => sum + e.amount, 0);
+                return (
+                  <div key={gi}>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">
+                      Grupo {gi + 1} ({group.length}/6)
+                    </p>
+                    <div className="space-y-1.5">
+                      {group.map(entry => (
+                        <div
+                          key={entry.id}
+                          className="flex items-center gap-3 bg-secondary/50 rounded-2xl p-2.5 cursor-pointer hover:bg-secondary/80 transition-colors"
+                          onClick={() => setEditingEntry(entry)}
+                        >
+                          <CreditCard className="w-4 h-4 text-info" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {entry.company || 'Crédito'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{entry.time}</p>
+                          </div>
+                          <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
+                      <p className="text-xs font-semibold text-info">Subtotal grupo {gi + 1}</p>
+                      <p className="text-sm font-bold text-info shield-blur">{formatCLP(subtotal)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {groups.length > 0 && (
+                <div className="flex justify-between items-center pt-2 border-t-2 border-info/30">
+                  <p className="text-xs font-bold text-foreground uppercase">Total Créditos</p>
+                  <p className="text-base font-bold text-info shield-blur">{formatCLP(grandTotal)}</p>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2 italic">Los créditos no afectan el saldo de caja</p>
+          </div>
+        );
+      })()}
 
       {/* Edit entry dialog */}
       {editingEntry && (
