@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput } from '@/lib/format';
 import { EntryType, CashEntry } from '@/types';
@@ -19,10 +19,62 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+function usePersistOpen(key: string, defaultValue = true) {
+  const [open, setOpen] = useState(() => {
+    const stored = sessionStorage.getItem(key);
+    return stored !== null ? stored === '1' : defaultValue;
+  });
+  const toggle = useCallback((v: boolean) => {
+    setOpen(v);
+    sessionStorage.setItem(key, v ? '1' : '0');
+  }, [key]);
+  return [open, toggle] as const;
+}
+
+function CreditSubgroup({ group, gi, onEdit }: { group: CashEntry[]; gi: number; onEdit: (e: CashEntry) => void }) {
+  const [open, setOpen] = usePersistOpen(`col-cred-g${gi}`, true);
+  const subtotal = group.reduce((sum, e) => sum + e.amount, 0);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between cursor-pointer group py-1">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+          Grupo {gi + 1} ({group.length}/6)
+        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs font-bold text-info shield-blur">{formatCLP(subtotal)}</p>
+          <ChevronDown className="w-3 h-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-1.5 mt-1.5">
+          {group.map(entry => (
+            <div
+              key={entry.id}
+              className="flex items-center gap-3 bg-secondary/50 rounded-2xl p-2.5 cursor-pointer hover:bg-secondary/80 transition-colors"
+              onClick={() => onEdit(entry)}
+            >
+              <CreditCard className="w-4 h-4 text-info" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {entry.company || 'Crédito'}
+                </p>
+                <p className="text-xs text-muted-foreground">{entry.time}</p>
+              </div>
+              <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
+            </div>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export default function Dashboard() {
   const { state, setZAmount, closeShift, depositsTotal, meta, efectivoReal, diferencia, status } = useApp();
   const [zInput, setZInput] = useState(state.zAmount > 0 ? state.zAmount.toString() : '');
   const [editingEntry, setEditingEntry] = useState<CashEntry | null>(null);
+  const [movOpen, setMovOpen] = usePersistOpen('col-mov', true);
+  const [credOpen, setCredOpen] = usePersistOpen('col-cred', true);
 
   const handleZChange = (val: string) => {
     const nums = val.replace(/\D/g, '');
@@ -140,7 +192,7 @@ export default function Dashboard() {
 
       {/* Today's entries (non-credit) */}
       {todayEntries.filter(e => e.type !== EntryType.CREDIT).length > 0 && (
-        <Collapsible defaultOpen className="m3-surface overflow-hidden">
+        <Collapsible open={movOpen} onOpenChange={setMovOpen} className="m3-surface overflow-hidden">
           <CollapsibleTrigger className="w-full p-4 pb-3 flex items-center justify-between cursor-pointer group">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Movimientos de Hoy</p>
             <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -186,7 +238,7 @@ export default function Dashboard() {
         const grandTotal = credits.reduce((sum, e) => sum + e.amount, 0);
 
         return (
-          <Collapsible defaultOpen className="m3-surface overflow-hidden">
+          <Collapsible open={credOpen} onOpenChange={setCredOpen} className="m3-surface overflow-hidden">
             <CollapsibleTrigger className="w-full p-4 pb-3 flex items-center justify-between cursor-pointer group">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">
                 Créditos · {credits.length} registros
@@ -198,42 +250,9 @@ export default function Dashboard() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="px-4 pb-4 space-y-4">
-                {groups.map((group, gi) => {
-                  const subtotal = group.reduce((sum, e) => sum + e.amount, 0);
-                  return (
-                    <Collapsible key={gi} defaultOpen>
-                      <CollapsibleTrigger className="w-full flex items-center justify-between cursor-pointer group py-1">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">
-                          Grupo {gi + 1} ({group.length}/6)
-                        </p>
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-info shield-blur">{formatCLP(subtotal)}</p>
-                          <ChevronDown className="w-3 h-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="space-y-1.5 mt-1.5">
-                          {group.map(entry => (
-                            <div
-                              key={entry.id}
-                              className="flex items-center gap-3 bg-secondary/50 rounded-2xl p-2.5 cursor-pointer hover:bg-secondary/80 transition-colors"
-                              onClick={() => setEditingEntry(entry)}
-                            >
-                              <CreditCard className="w-4 h-4 text-info" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">
-                                  {entry.company || 'Crédito'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{entry.time}</p>
-                              </div>
-                              <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  );
-                })}
+                {groups.map((group, gi) => (
+                  <CreditSubgroup key={gi} group={group} gi={gi} onEdit={setEditingEntry} />
+                ))}
               </div>
               <p className="text-[10px] text-muted-foreground px-4 pb-3 italic">Los créditos no afectan el saldo de caja</p>
             </CollapsibleContent>
