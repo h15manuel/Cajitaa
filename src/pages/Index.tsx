@@ -201,33 +201,37 @@ export default function Dashboard() {
                 {groups.map((group, gi) => {
                   const subtotal = group.reduce((sum, e) => sum + e.amount, 0);
                   return (
-                    <div key={gi}>
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">
-                        Grupo {gi + 1} ({group.length}/6)
-                      </p>
-                      <div className="space-y-1.5">
-                        {group.map(entry => (
-                          <div
-                            key={entry.id}
-                            className="flex items-center gap-3 bg-secondary/50 rounded-2xl p-2.5 cursor-pointer hover:bg-secondary/80 transition-colors"
-                            onClick={() => setEditingEntry(entry)}
-                          >
-                            <CreditCard className="w-4 h-4 text-info" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">
-                                {entry.company || 'Crédito'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{entry.time}</p>
+                    <Collapsible key={gi} defaultOpen>
+                      <CollapsibleTrigger className="w-full flex items-center justify-between cursor-pointer group py-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                          Grupo {gi + 1} ({group.length}/6)
+                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-info shield-blur">{formatCLP(subtotal)}</p>
+                          <ChevronDown className="w-3 h-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="space-y-1.5 mt-1.5">
+                          {group.map(entry => (
+                            <div
+                              key={entry.id}
+                              className="flex items-center gap-3 bg-secondary/50 rounded-2xl p-2.5 cursor-pointer hover:bg-secondary/80 transition-colors"
+                              onClick={() => setEditingEntry(entry)}
+                            >
+                              <CreditCard className="w-4 h-4 text-info" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {entry.company || 'Crédito'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{entry.time}</p>
+                              </div>
+                              <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
                             </div>
-                            <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
-                        <p className="text-xs font-semibold text-info">Subtotal grupo {gi + 1}</p>
-                        <p className="text-sm font-bold text-info shield-blur">{formatCLP(subtotal)}</p>
-                      </div>
-                    </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   );
                 })}
               </div>
