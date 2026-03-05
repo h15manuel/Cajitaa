@@ -145,7 +145,7 @@ export default function Shifts() {
       {/* Calendar grid */}
       <div className="m3-surface p-4">
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+          {['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'].map(d => (
             <div key={d} className="text-center text-xs text-muted-foreground font-medium py-1">{d}</div>
           ))}
         </div>
