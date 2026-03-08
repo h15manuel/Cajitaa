@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Palette, Moon, Sun, Check, Download, Upload } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, Moon, Sun, Check, Download, Upload, Bell } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
