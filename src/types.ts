@@ -78,4 +78,6 @@ export const defaultAppState: AppState = {
   shieldMode: false,
   weeklyHours: 44,
   shiftDuration: 7.5,
+  notificationsEnabled: false,
+  notificationTime: '20:00',
 };
