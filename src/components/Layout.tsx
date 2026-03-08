@@ -16,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, toggleShield } = useApp();
+  useShiftNotifications(state);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
