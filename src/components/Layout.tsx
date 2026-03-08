@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Clock, Search, CalendarDays, Settings, ShieldAlert, ShieldOff } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useShiftNotifications } from '@/hooks/useShiftNotifications';
 
 const tabs = [
   { path: '/', icon: LayoutDashboard, label: 'Caja' },
@@ -15,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, toggleShield } = useApp();
+  useShiftNotifications(state);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
