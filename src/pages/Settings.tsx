@@ -166,13 +166,18 @@ export default function SettingsPage() {
             checked={state.notificationsEnabled}
             onCheckedChange={async (checked) => {
               if (checked) {
-                if (!('Notification' in window)) {
-                  toast.error('Tu navegador no soporta notificaciones');
-                  return;
-                }
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                  toast.error('Debes permitir las notificaciones en tu navegador');
+                try {
+                  if (!('Notification' in window)) {
+                    toast.error('Tu navegador no soporta notificaciones');
+                    return;
+                  }
+                  const permission = await Notification.requestPermission();
+                  if (permission !== 'granted') {
+                    toast.error('Debes permitir las notificaciones en tu navegador');
+                    return;
+                  }
+                } catch {
+                  toast.error('Error al solicitar permisos de notificación');
                   return;
                 }
               }
