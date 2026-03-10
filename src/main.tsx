@@ -31,6 +31,8 @@ import "./index.css";
       document.documentElement.style.setProperty('--ring', val);
       const fgL = lv > 50 ? 6 : 98;
       document.documentElement.style.setProperty('--primary-foreground', `${hv} ${sv}% ${fgL}%`);
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', hex);
     }
   }
 })();
