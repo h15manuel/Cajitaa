@@ -55,6 +55,8 @@ export default function SettingsPage() {
     document.documentElement.style.setProperty('--ring', val);
     const fgL = hsl.l > 50 ? 6 : 98;
     document.documentElement.style.setProperty('--primary-foreground', `${hsl.h} ${hsl.s}% ${fgL}%`);
+    const meta = document.getElementById('theme-color-meta');
+    if (meta) meta.setAttribute('content', hex);
   };
 
   useEffect(() => {
