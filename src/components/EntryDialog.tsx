@@ -48,6 +48,7 @@ export default function EntryDialog({ type, children }: Props) {
       cashier: config.needsCashier ? cashier : undefined,
       company: config.needsCompany ? company : undefined,
       observation: observation || undefined,
+      cashCredit: type === EntryType.CREDIT ? cashCredit : undefined,
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().slice(0, 5),
     });
@@ -56,6 +57,7 @@ export default function EntryDialog({ type, children }: Props) {
     setCashier('');
     setCompany('');
     setObservation('');
+    setCashCredit(false);
     setOpen(false);
   };
 
