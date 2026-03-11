@@ -48,15 +48,15 @@ export default function QuickCountModal() {
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) resetState(); }}>
       <DialogTrigger asChild>
-        <button className="m3-surface-elevated p-5 w-full text-left animate-slide-up cursor-pointer hover:border-primary/40 transition-colors">
+        <button className="m3-surface-elevated p-3 w-full text-left cursor-pointer hover:border-primary/40 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Efectivo en Gaveta</p>
-              <p className="text-3xl font-bold text-foreground shield-blur mt-1">{formatCLP(state.cashDrawer)}</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Efectivo en Gaveta</p>
+              <p className="text-2xl font-bold text-foreground shield-blur mt-0.5">{formatCLP(state.cashDrawer)}</p>
             </div>
-            <Calculator className="w-8 h-8 text-primary" />
+            <Calculator className="w-6 h-6 text-primary" />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Toca para contar</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Toca para contar</p>
         </button>
       </DialogTrigger>
       <DialogContent className="rounded-3xl bg-card border-border max-w-xs mx-auto p-5">
