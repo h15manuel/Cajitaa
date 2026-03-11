@@ -39,6 +39,7 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
       amount,
       company: entry.type === EntryType.CREDIT ? company || undefined : entry.company,
       observation: observation || undefined,
+      cashCredit: entry.type === EntryType.CREDIT ? cashCredit : undefined,
     });
     onOpenChange(false);
   };
