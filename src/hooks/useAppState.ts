@@ -27,7 +27,8 @@ export function useAppState() {
   const closeShift = useCallback(() => {
     setState(s => {
       const depTotal = s.entries.filter(e => e.type === 'DEPOSIT').reduce((sum, e) => sum + e.amount, 0);
-      const m = s.zAmount - s.tipsTotal;
+      const cashCreditTot = s.entries.filter(e => e.type === 'CREDIT' && e.cashCredit).reduce((sum, e) => sum + e.amount, 0);
+      const m = s.zAmount - s.tipsTotal - cashCreditTot;
       const real = depTotal + s.cashDrawer;
       const diff = real - m;
       const st = diff === 0 ? 'cuadrada' : diff > 0 ? 'sobrante' : 'faltante';
