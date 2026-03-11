@@ -57,6 +57,7 @@ function CreditSubgroup({ group, gi, onEdit }: { group: CashEntry[]; gi: number;
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
                   {entry.company || 'Crédito'}
+                  {entry.cashCredit && <span className="ml-1 text-[10px] text-warning font-semibold">(Efectivo)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">{entry.time}</p>
               </div>
