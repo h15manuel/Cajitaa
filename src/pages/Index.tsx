@@ -125,7 +125,7 @@ export default function Dashboard() {
         <div className="m3-surface p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Meta</p>
           <p className="text-xl font-bold text-foreground shield-blur mt-1">{formatCLP(meta)}</p>
-          <p className="text-[10px] text-muted-foreground">Z - Propinas</p>
+          <p className="text-[10px] text-muted-foreground">Z - Propinas - Créd. Efectivo</p>
         </div>
         <div className="m3-surface p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Efectivo Real</p>
