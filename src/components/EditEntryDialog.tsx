@@ -23,6 +23,7 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
   const [amountStr, setAmountStr] = useState(entry.amount.toString());
   const [company, setCompany] = useState(entry.company || '');
   const [observation, setObservation] = useState(entry.observation || '');
+  const [cashCredit, setCashCredit] = useState(entry.cashCredit || false);
 
   const Icon = icons[entry.type];
 
