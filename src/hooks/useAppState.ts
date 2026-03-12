@@ -127,6 +127,7 @@ export function useAppState() {
     editEntry,
     deleteEntry,
     depositsTotal,
+    cashCreditTotal,
     meta,
     efectivoReal,
     diferencia,
