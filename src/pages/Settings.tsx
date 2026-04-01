@@ -36,6 +36,15 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(() => !document.documentElement.classList.contains('light'));
   const [primaryColor, setPrimaryColor] = useState(() => localStorage.getItem('primaryColor') || '#1abc9c');
+  const [zoom, setZoom] = useState(() => {
+    const saved = localStorage.getItem('uiZoom');
+    return saved ? parseInt(saved) : 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('uiZoom', zoom.toString());
+    document.documentElement.style.setProperty('--ui-zoom', (zoom / 100).toString());
+  }, [zoom]);
 
   useEffect(() => {
     if (isDark) {
