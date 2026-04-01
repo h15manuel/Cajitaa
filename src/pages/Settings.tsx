@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Palette, Moon, Sun, Check, Download, Upload, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, Moon, Sun, Check, Download, Upload, Bell, ZoomIn } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
@@ -35,6 +36,15 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(() => !document.documentElement.classList.contains('light'));
   const [primaryColor, setPrimaryColor] = useState(() => localStorage.getItem('primaryColor') || '#1abc9c');
+  const [zoom, setZoom] = useState(() => {
+    const saved = localStorage.getItem('uiZoom');
+    return saved ? parseInt(saved) : 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('uiZoom', zoom.toString());
+    document.documentElement.style.setProperty('--ui-zoom', (zoom / 100).toString());
+  }, [zoom]);
 
   useEffect(() => {
     if (isDark) {
@@ -151,6 +161,37 @@ export default function SettingsPage() {
               placeholder="#1abc9c"
               className="rounded-2xl bg-secondary border-border font-mono"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Zoom */}
+      <div className="m3-surface-elevated p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <ZoomIn className="w-5 h-5 text-primary" />
+          <p className="text-sm font-medium text-foreground">Tamaño de Interfaz</p>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Zoom: {zoom}%</p>
+            <button
+              onClick={() => { setZoom(100); }}
+              className="text-xs text-primary hover:underline"
+            >
+              Restablecer
+            </button>
+          </div>
+          <Slider
+            value={[zoom]}
+            onValueChange={v => setZoom(v[0])}
+            min={75}
+            max={125}
+            step={5}
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>75%</span>
+            <span>100%</span>
+            <span>125%</span>
           </div>
         </div>
       </div>

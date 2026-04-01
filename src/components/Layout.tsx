@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Clock, Search, CalendarDays, Settings, ShieldAlert, ShieldOff } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
@@ -17,6 +17,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { state, toggleShield } = useApp();
   useShiftNotifications(state);
+
+  const [zoom, setZoom] = useState(1);
+  useEffect(() => {
+    const saved = localStorage.getItem('uiZoom');
+    if (saved) setZoom(parseInt(saved) / 100);
+    const handler = () => {
+      const saved = localStorage.getItem('uiZoom');
+      if (saved) setZoom(parseInt(saved) / 100);
+    };
+    window.addEventListener('storage', handler);
+    // Poll for same-tab changes
+    const interval = setInterval(() => {
+      const val = parseFloat(document.documentElement.style.getPropertyValue('--ui-zoom') || '1');
+      setZoom(val);
+    }, 300);
+    return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -37,7 +54,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-4 pb-24">
+      <main className="flex-1 overflow-y-auto px-4 pb-24" style={{ transformOrigin: 'top center', transform: `scale(${zoom})` }}>
         <style dangerouslySetInnerHTML={{ __html: `:root { --shield-blur: ${state.shieldMode ? '8px' : '0px'}; }` }} />
         {children}
       </main>
