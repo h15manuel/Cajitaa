@@ -54,8 +54,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-4 pb-24" style={{ transformOrigin: 'top center', transform: `scale(${zoom})` }}>
-        <style dangerouslySetInnerHTML={{ __html: `:root { --shield-blur: ${state.shieldMode ? '8px' : '0px'}; }` }} />
+      <main className="flex-1 overflow-y-auto px-4 pb-24" style={{ fontSize: `${zoom}rem` }}>
+        <style dangerouslySetInnerHTML={{ __html: `:root { --shield-blur: ${state.shieldMode ? '8px' : '0px'}; --ui-scale: ${zoom}; }` }} />
         {children}
       </main>
 
