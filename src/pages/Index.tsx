@@ -200,7 +200,9 @@ export default function Dashboard() {
       {todayEntries.filter(e => e.type !== EntryType.CREDIT).length > 0 && (
         <Collapsible open={movOpen} onOpenChange={setMovOpen} className="m3-surface overflow-hidden">
           <CollapsibleTrigger className="w-full p-3 pb-2 flex items-center justify-between cursor-pointer group">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Movimientos de Hoy</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              Movimientos de Hoy · {todayEntries.filter(e => e.type === 'DEPOSIT').length} depósitos
+            </p>
             <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent>
