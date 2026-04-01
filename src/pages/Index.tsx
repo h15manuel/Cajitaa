@@ -133,7 +133,7 @@ export default function Dashboard() {
           <p className="text-[9px] text-muted-foreground leading-tight">Depósitos + Gaveta + Créd. Efect.</p>
         </div>
         <div className="m3-surface p-3 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Depósitos · {state.entries.filter(e => e.type === 'DEPOSIT').length}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Depósitos</p>
           <p className="text-xl font-bold text-primary shield-blur mt-1">{formatCLP(depositsTotal)}</p>
         </div>
         <div className="m3-surface p-3 text-center">
