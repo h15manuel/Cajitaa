@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Clock, Search, CalendarDays, Settings, ShieldAlert, ShieldOff } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
