@@ -94,56 +94,56 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-2 pt-1 max-w-lg mx-auto">
-      {/* Status indicator - compacto */}
+      {/* Status indicator */}
       {state.zAmount > 0 && (
-        <div className={`${sc.class} rounded-2xl p-2 flex items-center gap-2`}>
-          <sc.icon className="w-4 h-4" />
+        <div className={`${sc.class} rounded-2xl p-3 flex items-center gap-3`}>
+          <sc.icon className="w-5 h-5" />
           <div>
-            <p className="font-bold text-sm">{sc.label}</p>
-            <p className="text-xs opacity-80 shield-blur">{formatCLP(Math.abs(diferencia))}</p>
+            <p className="font-bold text-base">{sc.label}</p>
+            <p className="text-sm opacity-80 shield-blur">{formatCLP(Math.abs(diferencia))}</p>
           </div>
         </div>
       )}
 
       {/* Z Amount + Gaveta side by side */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="m3-surface-elevated p-2">
-          <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Monto Z</p>
+        <div className="m3-surface-elevated p-3 text-center">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Monto Z</p>
           <input
             value={zInput ? formatCLP(parseInt(zInput)) : ''}
             onChange={e => handleZChange(e.target.value)}
             placeholder="$0"
             inputMode="numeric"
-            className="w-full text-lg font-bold bg-transparent text-foreground outline-none mt-0.5 shield-blur"
+            className="w-full text-2xl font-bold bg-transparent text-foreground outline-none mt-1 shield-blur text-center"
           />
         </div>
         <QuickCountModal />
       </div>
 
-      {/* Summary grid - compacto */}
+      {/* Summary grid */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="m3-surface p-2">
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Meta</p>
-          <p className="text-base font-bold text-foreground shield-blur mt-0.5">{formatCLP(meta)}</p>
-          <p className="text-[8px] text-muted-foreground leading-tight">Z - Propinas - Créd. Efect.</p>
+        <div className="m3-surface p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta</p>
+          <p className="text-xl font-bold text-foreground shield-blur mt-1">{formatCLP(meta)}</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">Z - Propinas - Créd. Efect.</p>
         </div>
-        <div className="m3-surface p-2">
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Efectivo Real</p>
-          <p className="text-base font-bold text-foreground shield-blur mt-0.5">{formatCLP(efectivoReal)}</p>
-          <p className="text-[8px] text-muted-foreground leading-tight">Depósitos + Gaveta</p>
+        <div className="m3-surface p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Efectivo a Entregar</p>
+          <p className="text-xl font-bold text-foreground shield-blur mt-1">{formatCLP(depositsTotal + state.cashDrawer + cashCreditTotal)}</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">Depósitos + Gaveta + Créd. Efect.</p>
         </div>
-        <div className="m3-surface p-2">
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Depósitos</p>
-          <p className="text-base font-bold text-primary shield-blur mt-0.5">{formatCLP(depositsTotal)}</p>
+        <div className="m3-surface p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Depósitos</p>
+          <p className="text-xl font-bold text-primary shield-blur mt-1">{formatCLP(depositsTotal)}</p>
         </div>
-        <div className="m3-surface p-2">
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Propinas</p>
-          <p className="text-base font-bold text-warning shield-blur mt-0.5">{formatCLP(state.tipsTotal)}</p>
+        <div className="m3-surface p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Propinas</p>
+          <p className="text-xl font-bold text-warning shield-blur mt-1">{formatCLP(state.tipsTotal)}</p>
         </div>
-        <div className="m3-surface p-2 col-span-2">
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Créd. Efectivo</p>
-          <p className="text-base font-bold text-info shield-blur mt-0.5">{formatCLP(cashCreditTotal)}</p>
-          <p className="text-[8px] text-muted-foreground leading-tight">Se descuenta de la Meta</p>
+        <div className="m3-surface p-3 col-span-2 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Créd. Efectivo</p>
+          <p className="text-xl font-bold text-info shield-blur mt-1">{formatCLP(cashCreditTotal)}</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">Se descuenta de la Meta</p>
         </div>
       </div>
 
