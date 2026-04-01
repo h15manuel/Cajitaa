@@ -165,6 +165,37 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Zoom */}
+      <div className="m3-surface-elevated p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <ZoomIn className="w-5 h-5 text-primary" />
+          <p className="text-sm font-medium text-foreground">Tamaño de Interfaz</p>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Zoom: {zoom}%</p>
+            <button
+              onClick={() => { setZoom(100); }}
+              className="text-xs text-primary hover:underline"
+            >
+              Restablecer
+            </button>
+          </div>
+          <Slider
+            value={[zoom]}
+            onValueChange={v => setZoom(v[0])}
+            min={75}
+            max={125}
+            step={5}
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>75%</span>
+            <span>100%</span>
+            <span>125%</span>
+          </div>
+        </div>
+      </div>
+
       {/* Notificaciones de turno */}
       <div className="m3-surface-elevated p-5 space-y-3">
         <div className="flex items-center gap-3">
