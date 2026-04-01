@@ -18,6 +18,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { state, toggleShield } = useApp();
   useShiftNotifications(state);
 
+  const [zoom, setZoom] = useState(1);
+  useEffect(() => {
+    const saved = localStorage.getItem('uiZoom');
+    if (saved) setZoom(parseInt(saved) / 100);
+    const handler = () => {
+      const saved = localStorage.getItem('uiZoom');
+      if (saved) setZoom(parseInt(saved) / 100);
+    };
+    window.addEventListener('storage', handler);
+    // Poll for same-tab changes
+    const interval = setInterval(() => {
+      const val = parseFloat(document.documentElement.style.getPropertyValue('--ui-zoom') || '1');
+      setZoom(val);
+    }, 300);
+    return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top bar */}
