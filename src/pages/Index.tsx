@@ -128,7 +128,7 @@ export default function Dashboard() {
           <p className="text-[9px] text-muted-foreground leading-tight">Z - Propinas - Créd. Efect.</p>
         </div>
         <div className="m3-surface p-3 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Efectivo a Entregar</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Totalidad</p></p>
           <p className="text-xl font-bold text-foreground shield-blur mt-1">{formatCLP(depositsTotal + state.cashDrawer + cashCreditTotal)}</p>
           <p className="text-[9px] text-muted-foreground leading-tight">Depósitos + Gaveta + Créd. Efect.</p>
         </div>
