@@ -51,14 +51,14 @@ export default function Shifts() {
       .sort((a, b) => a.date.localeCompare(b.date));
     if (sorted.length === 0) return [];
 
-    const result: { start: string; end: string; hours: number; overLimit: boolean }[] = [];
+    const allCycles: { start: string; end: string; hours: number; overLimit: boolean }[] = [];
     let cycleStart: string | null = null;
     let hoursAccum = 0;
 
     for (const s of sorted) {
       if (s.shift === 'free') {
         if (cycleStart !== null && hoursAccum > 0) {
-          result.push({ start: cycleStart, end: s.date, hours: hoursAccum, overLimit: hoursAccum > state.weeklyHours });
+          allCycles.push({ start: cycleStart, end: s.date, hours: hoursAccum, overLimit: hoursAccum > state.weeklyHours });
         }
         cycleStart = null;
         hoursAccum = 0;
@@ -68,10 +68,14 @@ export default function Shifts() {
       }
     }
     if (cycleStart !== null && hoursAccum > 0) {
-      result.push({ start: cycleStart, end: sorted[sorted.length - 1].date, hours: hoursAccum, overLimit: hoursAccum > state.weeklyHours });
+      allCycles.push({ start: cycleStart, end: sorted[sorted.length - 1].date, hours: hoursAccum, overLimit: hoursAccum > state.weeklyHours });
     }
-    return result;
-  }, [state.shifts, state.weeklyHours]);
+
+    // Filter: only cycles that overlap with the current month
+    const mStart = format(monthStart, 'yyyy-MM-dd');
+    const mEnd = format(monthEnd, 'yyyy-MM-dd');
+    return allCycles.filter(c => c.start <= mEnd && c.end >= mStart);
+  }, [state.shifts, state.weeklyHours, monthStart, monthEnd]);
 
   return (
     <div className="space-y-4 pt-2 max-w-lg mx-auto">
