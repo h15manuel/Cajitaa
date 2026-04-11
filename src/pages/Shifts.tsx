@@ -1,27 +1,50 @@
-import React, { useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { DayShift } from '@/types';
+import type { CustomShiftType } from '@/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
-const shiftConfig: Record<string, { label: string; short: string; color: string; hours: boolean }> = {
-  morning: { label: 'Mañana', short: 'M', color: 'bg-warning text-warning-foreground', hours: true },
-  afternoon: { label: 'Tarde', short: 'T', color: 'bg-info text-info-foreground', hours: true },
-  night: { label: 'Noche', short: 'N', color: 'bg-primary text-primary-foreground', hours: true },
-  free: { label: 'Libre', short: 'L', color: 'bg-success text-success-foreground', hours: false },
-  none: { label: 'Borrar', short: '✕', color: 'bg-destructive/20 text-destructive', hours: false },
+// Built-in shift definitions (always available)
+const builtInShifts: Record<string, { label: string; short: string; color: string; hours: boolean; defaultHours: number }> = {
+  morning: { label: 'Mañana', short: 'M', color: 'bg-warning text-warning-foreground', hours: true, defaultHours: 7.5 },
+  afternoon: { label: 'Tarde', short: 'T', color: 'bg-info text-info-foreground', hours: true, defaultHours: 7.5 },
+  night: { label: 'Noche', short: 'N', color: 'bg-primary text-primary-foreground', hours: true, defaultHours: 7.5 },
+  free: { label: 'Libre', short: 'L', color: 'bg-success text-success-foreground', hours: false, defaultHours: 0 },
+  none: { label: 'Borrar', short: '✕', color: 'bg-destructive/20 text-destructive', hours: false, defaultHours: 0 },
 };
 
-type ShiftType = DayShift['shift'];
-const shiftTypes: ShiftType[] = ['morning', 'afternoon', 'night', 'free', 'none'];
-const hourOptions: (7.5 | 6.5)[] = [7.5, 6.5];
+const colorOptions = [
+  { bg: 'bg-warning', text: 'text-warning-foreground', label: 'Amarillo' },
+  { bg: 'bg-info', text: 'text-info-foreground', label: 'Azul' },
+  { bg: 'bg-primary', text: 'text-primary-foreground', label: 'Verde' },
+  { bg: 'bg-success', text: 'text-success-foreground', label: 'Verde claro' },
+  { bg: 'bg-destructive', text: 'text-destructive-foreground', label: 'Rojo' },
+  { bg: 'bg-accent', text: 'text-accent-foreground', label: 'Gris' },
+  { bg: 'bg-secondary', text: 'text-secondary-foreground', label: 'Oscuro' },
+  { bg: 'bg-purple-600', text: 'text-white', label: 'Morado' },
+  { bg: 'bg-orange-500', text: 'text-white', label: 'Naranja' },
+  { bg: 'bg-pink-500', text: 'text-white', label: 'Rosa' },
+];
 
 export default function Shifts() {
   const { state, setState } = useApp();
-  const [currentMonth, setCurrentMonth] = React.useState(new Date());
-  const [selectedShift, setSelectedShift] = React.useState<ShiftType>('morning');
-  const [selectedHours, setSelectedHours] = React.useState<7.5 | 6.5>(7.5);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedShift, setSelectedShift] = useState<string>('morning');
+  const [selectedHours, setSelectedHours] = useState<number>(7.5);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingShift, setEditingShift] = useState<CustomShiftType | null>(null);
+
+  // Form state for create/edit dialog
+  const [formName, setFormName] = useState('');
+  const [formShort, setFormShort] = useState('');
+  const [formHours, setFormHours] = useState('7.5');
+  const [formSchedule, setFormSchedule] = useState('');
+  const [formColorIdx, setFormColorIdx] = useState(0);
+  const [formCountsHours, setFormCountsHours] = useState(true);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -29,20 +52,100 @@ export default function Shifts() {
   const firstDayOfWeek = (getDay(monthStart) + 6) % 7;
   const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => null);
 
+  // Merge built-in + custom shifts into a unified config
+  const allShiftConfig = useMemo(() => {
+    const config: Record<string, { label: string; short: string; color: string; hours: boolean; defaultHours: number; schedule?: string }> = { ...builtInShifts };
+    for (const cs of (state.customShiftTypes || [])) {
+      config[cs.id] = {
+        label: cs.label,
+        short: cs.short,
+        color: `${cs.color} ${cs.textColor}`,
+        hours: cs.hours,
+        defaultHours: cs.defaultHours,
+        schedule: cs.schedule,
+      };
+    }
+    return config;
+  }, [state.customShiftTypes]);
+
+  const allShiftKeys = useMemo(() => {
+    const builtInKeys = ['morning', 'afternoon', 'night', 'free'];
+    const customKeys = (state.customShiftTypes || []).map(c => c.id);
+    return [...builtInKeys, ...customKeys, 'none'];
+  }, [state.customShiftTypes]);
+
   const getShiftData = (dateStr: string) => state.shifts.find(s => s.date === dateStr);
-  const getShift = (dateStr: string): ShiftType => getShiftData(dateStr)?.shift || 'none';
+  const getShift = (dateStr: string): string => getShiftData(dateStr)?.shift || 'none';
   const getHours = (dateStr: string): number => getShiftData(dateStr)?.hours || 7.5;
 
   const applyShift = (dateStr: string) => {
     setState(s => {
       const filtered = s.shifts.filter(sh => sh.date !== dateStr);
       if (selectedShift === 'none') return { ...s, shifts: filtered };
-      const hasHours = shiftConfig[selectedShift].hours;
+      const cfg = allShiftConfig[selectedShift];
+      const hasHours = cfg?.hours ?? false;
       return {
         ...s,
         shifts: [...filtered, { date: dateStr, shift: selectedShift, hours: hasHours ? selectedHours : undefined }],
       };
     });
+  };
+
+  // Open create dialog
+  const openCreate = () => {
+    setEditingShift(null);
+    setFormName('');
+    setFormShort('');
+    setFormHours('7.5');
+    setFormSchedule('');
+    setFormColorIdx(0);
+    setFormCountsHours(true);
+    setShowCreateDialog(true);
+  };
+
+  // Open edit dialog
+  const openEdit = (cs: CustomShiftType) => {
+    setEditingShift(cs);
+    setFormName(cs.label);
+    setFormShort(cs.short);
+    setFormHours(String(cs.defaultHours));
+    setFormSchedule(cs.schedule || '');
+    setFormCountsHours(cs.hours);
+    const idx = colorOptions.findIndex(c => c.bg === cs.color);
+    setFormColorIdx(idx >= 0 ? idx : 0);
+    setShowCreateDialog(true);
+  };
+
+  const saveShift = () => {
+    if (!formName.trim()) return;
+    const col = colorOptions[formColorIdx];
+    const newShift: CustomShiftType = {
+      id: editingShift?.id || `custom_${Date.now()}`,
+      label: formName.trim(),
+      short: formShort.trim() || formName.trim()[0].toUpperCase(),
+      color: col.bg,
+      textColor: col.text,
+      hours: formCountsHours,
+      defaultHours: parseFloat(formHours) || 7.5,
+      schedule: formSchedule.trim() || undefined,
+    };
+    setState(s => {
+      const existing = s.customShiftTypes || [];
+      if (editingShift) {
+        return { ...s, customShiftTypes: existing.map(c => c.id === editingShift.id ? newShift : c) };
+      }
+      return { ...s, customShiftTypes: [...existing, newShift] };
+    });
+    setShowCreateDialog(false);
+  };
+
+  const deleteCustomShift = (id: string) => {
+    setState(s => ({
+      ...s,
+      customShiftTypes: (s.customShiftTypes || []).filter(c => c.id !== id),
+      shifts: s.shifts.filter(sh => sh.shift !== id),
+    }));
+    if (selectedShift === id) setSelectedShift('morning');
   };
 
   const cycles = useMemo(() => {
@@ -71,7 +174,6 @@ export default function Shifts() {
       allCycles.push({ start: cycleStart, end: sorted[sorted.length - 1].date, hours: hoursAccum, overLimit: hoursAccum > state.weeklyHours });
     }
 
-    // Filter: only cycles that overlap with the current month
     const mStart = format(monthStart, 'yyyy-MM-dd');
     const mEnd = format(monthEnd, 'yyyy-MM-dd');
     return allCycles.filter(c => c.start <= mEnd && c.end >= mStart);
@@ -93,33 +195,45 @@ export default function Shifts() {
         </select>
       </div>
 
-      {/* Shift + hours picker ("brush") */}
+      {/* Shift + hours picker */}
       <div className="m3-surface p-3 space-y-2">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Selecciona turno y toca los días</p>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Selecciona turno y toca los días</p>
+          <button onClick={openCreate} className="p-1.5 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
         <div className="flex flex-wrap gap-1.5">
-          {shiftTypes.map(type => {
-            const cfg = shiftConfig[type];
+          {allShiftKeys.map(type => {
+            const cfg = allShiftConfig[type];
+            if (!cfg) return null;
             const isActive = selectedShift === type;
+            const isCustom = !builtInShifts[type];
             return (
               <button
                 key={type}
-                onClick={() => setSelectedShift(type)}
+                onClick={() => {
+                  setSelectedShift(type);
+                  if (cfg.hours && cfg.defaultHours) setSelectedHours(cfg.defaultHours);
+                }}
+                onContextMenu={isCustom ? (e) => { e.preventDefault(); openEdit((state.customShiftTypes || []).find(c => c.id === type)!); } : undefined}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${cfg.color} ${
                   isActive ? 'ring-2 ring-foreground ring-offset-1 ring-offset-background scale-105' : 'opacity-60'
                 }`}
               >
                 {cfg.label}
+                {cfg.schedule && isActive && <span className="ml-1 opacity-70 text-[9px]">({cfg.schedule})</span>}
               </button>
             );
           })}
         </div>
-        {shiftConfig[selectedShift].hours && (
+        {allShiftConfig[selectedShift]?.hours && (
           <div className="flex gap-2 items-center">
             <p className="text-[10px] text-muted-foreground">Horas:</p>
-            {hourOptions.map(h => (
+            {[7.5, 6.5, allShiftConfig[selectedShift]?.defaultHours].filter((v, i, arr) => v && arr.indexOf(v) === i).map(h => (
               <button
                 key={h}
-                onClick={() => setSelectedHours(h)}
+                onClick={() => setSelectedHours(h!)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                   selectedHours === h
                     ? 'bg-foreground text-background'
@@ -158,10 +272,10 @@ export default function Shifts() {
           {days.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const shift = getShift(dateStr);
-            const cfg = shiftConfig[shift];
+            const cfg = allShiftConfig[shift] || allShiftConfig['none'];
             const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
             const dayHours = getHours(dateStr);
-            const isWorkShift = shift !== 'none' && shift !== 'free' && shiftConfig[shift].hours;
+            const isWorkShift = shift !== 'none' && shift !== 'free' && cfg.hours;
             return (
               <button
                 key={dateStr}
@@ -181,12 +295,43 @@ export default function Shifts() {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-2 px-1">
-        {Object.entries(shiftConfig).filter(([k]) => k !== 'none').map(([key, cfg]) => (
+        {Object.entries(allShiftConfig).filter(([k]) => k !== 'none').map(([key, cfg]) => (
           <div key={key} className={`${cfg.color} rounded-full px-3 py-1 text-xs font-medium`}>
             {cfg.label}
           </div>
         ))}
       </div>
+
+      {/* Custom shifts management */}
+      {(state.customShiftTypes || []).length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-1">Turnos personalizados</p>
+          {(state.customShiftTypes || []).map(cs => (
+            <div key={cs.id} className="m3-surface p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${cs.color} ${cs.textColor}`}>
+                  {cs.short}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{cs.label}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {cs.hours ? `${cs.defaultHours}h` : 'Sin horas'}
+                    {cs.schedule && ` · ${cs.schedule}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => openEdit(cs)} className="p-1.5 rounded-full hover:bg-secondary">
+                  <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+                <button onClick={() => deleteCustomShift(cs.id)} className="p-1.5 rounded-full hover:bg-destructive/20">
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Cycles compliance */}
       {cycles.length > 0 && (
@@ -214,6 +359,61 @@ export default function Shifts() {
           ))}
         </div>
       )}
+
+      {/* Create/Edit shift dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{editingShift ? 'Editar turno' : 'Nuevo turno'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nombre</label>
+              <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ej: Turno especial" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Abreviatura (1-2 letras)</label>
+              <Input value={formShort} onChange={e => setFormShort(e.target.value.slice(0, 2))} placeholder="Ej: TE" maxLength={2} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Horario (opcional)</label>
+              <Input value={formSchedule} onChange={e => setFormSchedule(e.target.value)} placeholder="Ej: 06:00 - 14:00" />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-muted-foreground">¿Cuenta horas?</label>
+              <button
+                onClick={() => setFormCountsHours(!formCountsHours)}
+                className={`px-3 py-1 rounded-full text-xs font-bold ${formCountsHours ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+              >
+                {formCountsHours ? 'Sí' : 'No'}
+              </button>
+            </div>
+            {formCountsHours && (
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Horas por turno</label>
+                <Input type="number" step="0.5" value={formHours} onChange={e => setFormHours(e.target.value)} />
+              </div>
+            )}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {colorOptions.map((col, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setFormColorIdx(idx)}
+                    className={`w-8 h-8 rounded-full ${col.bg} ${
+                      formColorIdx === idx ? 'ring-2 ring-foreground ring-offset-2 ring-offset-background' : ''
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <Button onClick={saveShift} className="w-full" disabled={!formName.trim()}>
+              {editingShift ? 'Guardar cambios' : 'Crear turno'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

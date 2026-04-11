@@ -44,10 +44,21 @@ export interface ShiftRecord {
   entries: CashEntry[];
 }
 
+export interface CustomShiftType {
+  id: string;
+  label: string;
+  short: string;
+  color: string; // tailwind bg class
+  textColor: string; // tailwind text class
+  hours: boolean; // whether this shift counts work hours
+  defaultHours: number;
+  schedule?: string; // optional schedule description e.g. "06:00 - 14:00"
+}
+
 export interface DayShift {
   date: string;
-  shift: 'morning' | 'afternoon' | 'night' | 'free' | 'none';
-  hours?: 7.5 | 6.5; // per-day duration, defaults to 7.5
+  shift: string; // built-in key or custom shift id
+  hours?: number;
 }
 
 export interface AppState {
@@ -58,6 +69,7 @@ export interface AppState {
   companies: Company[];
   vehicles: Vehicle[];
   shifts: DayShift[];
+  customShiftTypes: CustomShiftType[];
   shiftHistory: ShiftRecord[];
   shieldMode: boolean;
   weeklyHours: 44 | 42 | 40;
@@ -75,6 +87,7 @@ export const defaultAppState: AppState = {
   companies: [],
   vehicles: [],
   shifts: [],
+  customShiftTypes: [],
   shiftHistory: [],
   shieldMode: false,
   weeklyHours: 44,
