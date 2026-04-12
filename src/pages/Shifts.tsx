@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay } from 'date-fns';
@@ -7,6 +7,7 @@ import type { CustomShiftType } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import TimePicker from '@/components/TimePicker';
 
 // Built-in shift definitions (always available)
 const builtInShifts: Record<string, { label: string; short: string; color: string; hours: boolean; defaultHours: number }> = {
@@ -41,10 +42,24 @@ export default function Shifts() {
   // Form state for create/edit dialog
   const [formName, setFormName] = useState('');
   const [formShort, setFormShort] = useState('');
-  const [formHours, setFormHours] = useState('7.5');
-  const [formSchedule, setFormSchedule] = useState('');
+  const [formStartTime, setFormStartTime] = useState('06:00');
+  const [formEndTime, setFormEndTime] = useState('14:00');
   const [formColorIdx, setFormColorIdx] = useState(0);
   const [formCountsHours, setFormCountsHours] = useState(true);
+  const [pickingTime, setPickingTime] = useState<'start' | 'end'>('start');
+
+  // Auto-calculate hours from schedule minus 30min colación
+  const calcHours = useCallback((start: string, end: string) => {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+    if (totalMin <= 0) totalMin += 24 * 60; // overnight shift
+    const netHours = (totalMin - 30) / 60; // subtract 30min colación
+    return Math.max(0, Math.round(netHours * 2) / 2); // round to nearest 0.5
+  }, []);
+
+  const computedHours = useMemo(() => calcHours(formStartTime, formEndTime), [formStartTime, formEndTime, calcHours]);
+  const formSchedule = `${formStartTime} - ${formEndTime}`;
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -96,10 +111,11 @@ export default function Shifts() {
     setEditingShift(null);
     setFormName('');
     setFormShort('');
-    setFormHours('7.5');
-    setFormSchedule('');
+    setFormStartTime('06:00');
+    setFormEndTime('14:00');
     setFormColorIdx(0);
     setFormCountsHours(true);
+    setPickingTime('start');
     setShowCreateDialog(true);
   };
 
@@ -108,9 +124,16 @@ export default function Shifts() {
     setEditingShift(cs);
     setFormName(cs.label);
     setFormShort(cs.short);
-    setFormHours(String(cs.defaultHours));
-    setFormSchedule(cs.schedule || '');
+    if (cs.schedule) {
+      const parts = cs.schedule.split(' - ');
+      setFormStartTime(parts[0] || '06:00');
+      setFormEndTime(parts[1] || '14:00');
+    } else {
+      setFormStartTime('06:00');
+      setFormEndTime('14:00');
+    }
     setFormCountsHours(cs.hours);
+    setPickingTime('start');
     const idx = colorOptions.findIndex(c => c.bg === cs.color);
     setFormColorIdx(idx >= 0 ? idx : 0);
     setShowCreateDialog(true);
@@ -126,8 +149,8 @@ export default function Shifts() {
       color: col.bg,
       textColor: col.text,
       hours: formCountsHours,
-      defaultHours: parseFloat(formHours) || 7.5,
-      schedule: formSchedule.trim() || undefined,
+      defaultHours: computedHours,
+      schedule: formCountsHours ? formSchedule : undefined,
     };
     setState(s => {
       const existing = s.customShiftTypes || [];
@@ -375,10 +398,6 @@ export default function Shifts() {
               <label className="text-xs text-muted-foreground mb-1 block">Abreviatura (1-2 letras)</label>
               <Input value={formShort} onChange={e => setFormShort(e.target.value.slice(0, 2))} placeholder="Ej: TE" maxLength={2} />
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Horario (opcional)</label>
-              <Input value={formSchedule} onChange={e => setFormSchedule(e.target.value)} placeholder="Ej: 06:00 - 14:00" />
-            </div>
             <div className="flex items-center gap-3">
               <label className="text-xs text-muted-foreground">¿Cuenta horas?</label>
               <button
@@ -389,9 +408,46 @@ export default function Shifts() {
               </button>
             </div>
             {formCountsHours && (
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Horas por turno</label>
-                <Input type="number" step="0.5" value={formHours} onChange={e => setFormHours(e.target.value)} />
+              <div className="space-y-3">
+                {/* Time picker tabs */}
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setPickingTime('start')}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      pickingTime === 'start' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    Entrada: {formStartTime}
+                  </button>
+                  <button
+                    onClick={() => setPickingTime('end')}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      pickingTime === 'end' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    Salida: {formEndTime}
+                  </button>
+                </div>
+
+                <TimePicker
+                  value={pickingTime === 'start' ? formStartTime : formEndTime}
+                  onChange={(v) => {
+                    if (pickingTime === 'start') {
+                      setFormStartTime(v);
+                      // Auto-advance to end time after selecting start
+                      setTimeout(() => setPickingTime('end'), 300);
+                    } else {
+                      setFormEndTime(v);
+                    }
+                  }}
+                />
+
+                {/* Calculated hours display */}
+                <div className="text-center p-3 rounded-xl bg-secondary/50 border border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">Horas netas (menos 30min colación)</p>
+                  <p className="text-2xl font-bold text-foreground">{computedHours}h</p>
+                  <p className="text-[10px] text-muted-foreground">{formSchedule}</p>
+                </div>
               </div>
             )}
             <div>
