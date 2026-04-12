@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 interface TimePickerProps {
   value: string; // "HH:mm"
@@ -8,18 +8,19 @@ interface TimePickerProps {
 
 const pad = (n: number) => n.toString().padStart(2, '0');
 
-function ScrollColumn({ items, selected, onSelect, formatFn }: {
+function ScrollColumn({ items, selected, onSelect }: {
   items: number[];
   selected: number;
   onSelect: (v: number) => void;
-  formatFn?: (v: number) => string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemHeight = 40;
-  const fmt = formatFn || ((v: number) => pad(v));
+  const isUserScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>();
 
+  // Scroll to selected on mount and when selected changes externally
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && !isUserScrolling.current) {
       const idx = items.indexOf(selected);
       if (idx >= 0) {
         containerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' });
@@ -27,31 +28,56 @@ function ScrollColumn({ items, selected, onSelect, formatFn }: {
     }
   }, [selected, items]);
 
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+
+    scrollTimeout.current = setTimeout(() => {
+      if (!containerRef.current) return;
+      const scrollTop = containerRef.current.scrollTop;
+      const idx = Math.round(scrollTop / itemHeight);
+      const clampedIdx = Math.max(0, Math.min(items.length - 1, idx));
+      
+      // Snap to nearest item
+      containerRef.current.scrollTo({ top: clampedIdx * itemHeight, behavior: 'smooth' });
+      
+      // Select the item
+      if (items[clampedIdx] !== selected) {
+        onSelect(items[clampedIdx]);
+      }
+      
+      setTimeout(() => { isUserScrolling.current = false; }, 100);
+    }, 80);
+  }, [items, selected, onSelect]);
+
   return (
     <div
       ref={containerRef}
-      className="h-[160px] overflow-y-auto snap-y snap-mandatory scrollbar-hide"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      onScroll={handleScroll}
+      className="h-[160px] overflow-y-auto"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
     >
-      <div style={{ height: `${itemHeight * 1.5}px` }} />
+      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
+      {/* Top padding: 2 items to center first item */}
+      <div style={{ height: `${itemHeight * 2}px` }} />
       {items.map(item => {
         const isSelected = item === selected;
         return (
-          <button
+          <div
             key={item}
-            onClick={() => onSelect(item)}
-            className={`w-full snap-center flex items-center justify-center text-lg font-medium transition-all ${
+            className={`flex items-center justify-center text-lg font-medium transition-all duration-150 ${
               isSelected
                 ? 'text-primary font-bold scale-110'
-                : 'text-muted-foreground opacity-50'
+                : 'text-muted-foreground opacity-40'
             }`}
             style={{ height: `${itemHeight}px` }}
           >
-            {fmt(item)}
-          </button>
+            {pad(item)}
+          </div>
         );
       })}
-      <div style={{ height: `${itemHeight * 1.5}px` }} />
+      {/* Bottom padding */}
+      <div style={{ height: `${itemHeight * 2}px` }} />
     </div>
   );
 }
@@ -65,8 +91,7 @@ export default function TimePicker({ value, onChange, label }: TimePickerProps) 
   return (
     <div className="space-y-2">
       {label && <label className="text-xs text-muted-foreground block">{label}</label>}
-      <div className="flex items-center justify-center gap-0 bg-secondary/50 rounded-2xl border border-border overflow-hidden">
-        {/* Hours */}
+      <div className="flex items-center justify-center gap-0 bg-secondary/50 rounded-2xl border border-border overflow-hidden scrollbar-hide">
         <div className="w-20 relative">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-primary/10 rounded-lg pointer-events-none z-0" />
           <ScrollColumn
@@ -76,7 +101,6 @@ export default function TimePicker({ value, onChange, label }: TimePickerProps) 
           />
         </div>
         <span className="text-xl font-bold text-muted-foreground">:</span>
-        {/* Minutes */}
         <div className="w-20 relative">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-primary/10 rounded-lg pointer-events-none z-0" />
           <ScrollColumn
