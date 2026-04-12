@@ -111,10 +111,11 @@ export default function Shifts() {
     setEditingShift(null);
     setFormName('');
     setFormShort('');
-    setFormHours('7.5');
-    setFormSchedule('');
+    setFormStartTime('06:00');
+    setFormEndTime('14:00');
     setFormColorIdx(0);
     setFormCountsHours(true);
+    setPickingTime('start');
     setShowCreateDialog(true);
   };
 
@@ -123,9 +124,16 @@ export default function Shifts() {
     setEditingShift(cs);
     setFormName(cs.label);
     setFormShort(cs.short);
-    setFormHours(String(cs.defaultHours));
-    setFormSchedule(cs.schedule || '');
+    if (cs.schedule) {
+      const parts = cs.schedule.split(' - ');
+      setFormStartTime(parts[0] || '06:00');
+      setFormEndTime(parts[1] || '14:00');
+    } else {
+      setFormStartTime('06:00');
+      setFormEndTime('14:00');
+    }
     setFormCountsHours(cs.hours);
+    setPickingTime('start');
     const idx = colorOptions.findIndex(c => c.bg === cs.color);
     setFormColorIdx(idx >= 0 ? idx : 0);
     setShowCreateDialog(true);
@@ -141,8 +149,8 @@ export default function Shifts() {
       color: col.bg,
       textColor: col.text,
       hours: formCountsHours,
-      defaultHours: parseFloat(formHours) || 7.5,
-      schedule: formSchedule.trim() || undefined,
+      defaultHours: computedHours,
+      schedule: formCountsHours ? formSchedule : undefined,
     };
     setState(s => {
       const existing = s.customShiftTypes || [];
@@ -390,10 +398,6 @@ export default function Shifts() {
               <label className="text-xs text-muted-foreground mb-1 block">Abreviatura (1-2 letras)</label>
               <Input value={formShort} onChange={e => setFormShort(e.target.value.slice(0, 2))} placeholder="Ej: TE" maxLength={2} />
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Horario (opcional)</label>
-              <Input value={formSchedule} onChange={e => setFormSchedule(e.target.value)} placeholder="Ej: 06:00 - 14:00" />
-            </div>
             <div className="flex items-center gap-3">
               <label className="text-xs text-muted-foreground">¿Cuenta horas?</label>
               <button
@@ -404,9 +408,46 @@ export default function Shifts() {
               </button>
             </div>
             {formCountsHours && (
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Horas por turno</label>
-                <Input type="number" step="0.5" value={formHours} onChange={e => setFormHours(e.target.value)} />
+              <div className="space-y-3">
+                {/* Time picker tabs */}
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setPickingTime('start')}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      pickingTime === 'start' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    Entrada: {formStartTime}
+                  </button>
+                  <button
+                    onClick={() => setPickingTime('end')}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      pickingTime === 'end' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    Salida: {formEndTime}
+                  </button>
+                </div>
+
+                <TimePicker
+                  value={pickingTime === 'start' ? formStartTime : formEndTime}
+                  onChange={(v) => {
+                    if (pickingTime === 'start') {
+                      setFormStartTime(v);
+                      // Auto-advance to end time after selecting start
+                      setTimeout(() => setPickingTime('end'), 300);
+                    } else {
+                      setFormEndTime(v);
+                    }
+                  }}
+                />
+
+                {/* Calculated hours display */}
+                <div className="text-center p-3 rounded-xl bg-secondary/50 border border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">Horas netas (menos 30min colación)</p>
+                  <p className="text-2xl font-bold text-foreground">{computedHours}h</p>
+                  <p className="text-[10px] text-muted-foreground">{formSchedule}</p>
+                </div>
               </div>
             )}
             <div>
