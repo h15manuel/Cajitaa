@@ -54,10 +54,9 @@ function ScrollColumn({ items, selected, onSelect }: {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="h-[160px] overflow-y-auto"
+      className="h-[160px] overflow-y-auto scrollbar-hide"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
     >
-      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
       {/* Top padding: 2 items to center first item */}
       <div style={{ height: `${itemHeight * 2}px` }} />
       {items.map(item => {
@@ -68,7 +67,7 @@ function ScrollColumn({ items, selected, onSelect }: {
             className={`flex items-center justify-center text-lg font-medium transition-all duration-150 ${
               isSelected
                 ? 'text-primary font-bold scale-110'
-                : 'text-muted-foreground opacity-40'
+                : 'text-muted-foreground/40'
             }`}
             style={{ height: `${itemHeight}px` }}
           >
@@ -91,18 +90,18 @@ export default function TimePicker({ value, onChange, label }: TimePickerProps) 
   return (
     <div className="space-y-2">
       {label && <label className="text-xs text-muted-foreground block">{label}</label>}
-      <div className="flex items-center justify-center gap-0 bg-secondary/50 rounded-2xl border border-border overflow-hidden scrollbar-hide">
-        <div className="w-20 relative">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-primary/10 rounded-lg pointer-events-none z-0" />
+      <div className="flex items-center justify-center gap-0 bg-secondary/50 rounded-2xl border border-border overflow-hidden">
+        <div className="w-24 relative">
+          <div className="absolute inset-x-1 top-1/2 -translate-y-1/2 h-11 bg-primary/20 rounded-full pointer-events-none z-0" />
           <ScrollColumn
             items={hours}
             selected={h}
             onSelect={(v) => onChange(`${pad(v)}:${pad(m)}`)}
           />
         </div>
-        <span className="text-xl font-bold text-muted-foreground">:</span>
-        <div className="w-20 relative">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-primary/10 rounded-lg pointer-events-none z-0" />
+        <span className="text-xl font-bold text-muted-foreground/60">:</span>
+        <div className="w-24 relative">
+          <div className="absolute inset-x-1 top-1/2 -translate-y-1/2 h-11 bg-primary/20 rounded-full pointer-events-none z-0" />
           <ScrollColumn
             items={minutes}
             selected={m}
