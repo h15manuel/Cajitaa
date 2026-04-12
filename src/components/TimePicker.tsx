@@ -54,10 +54,9 @@ function ScrollColumn({ items, selected, onSelect }: {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="h-[160px] overflow-y-auto"
+      className="h-[160px] overflow-y-auto scrollbar-hide"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
     >
-      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
       {/* Top padding: 2 items to center first item */}
       <div style={{ height: `${itemHeight * 2}px` }} />
       {items.map(item => {
@@ -68,7 +67,7 @@ function ScrollColumn({ items, selected, onSelect }: {
             className={`flex items-center justify-center text-lg font-medium transition-all duration-150 ${
               isSelected
                 ? 'text-primary font-bold scale-110'
-                : 'text-muted-foreground opacity-40'
+                : 'text-muted-foreground/40'
             }`}
             style={{ height: `${itemHeight}px` }}
           >
