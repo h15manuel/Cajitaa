@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay } from 'date-fns';
@@ -7,6 +7,7 @@ import type { CustomShiftType } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import TimePicker from '@/components/TimePicker';
 
 // Built-in shift definitions (always available)
 const builtInShifts: Record<string, { label: string; short: string; color: string; hours: boolean; defaultHours: number }> = {
@@ -41,10 +42,24 @@ export default function Shifts() {
   // Form state for create/edit dialog
   const [formName, setFormName] = useState('');
   const [formShort, setFormShort] = useState('');
-  const [formHours, setFormHours] = useState('7.5');
-  const [formSchedule, setFormSchedule] = useState('');
+  const [formStartTime, setFormStartTime] = useState('06:00');
+  const [formEndTime, setFormEndTime] = useState('14:00');
   const [formColorIdx, setFormColorIdx] = useState(0);
   const [formCountsHours, setFormCountsHours] = useState(true);
+  const [pickingTime, setPickingTime] = useState<'start' | 'end'>('start');
+
+  // Auto-calculate hours from schedule minus 30min colación
+  const calcHours = useCallback((start: string, end: string) => {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+    if (totalMin <= 0) totalMin += 24 * 60; // overnight shift
+    const netHours = (totalMin - 30) / 60; // subtract 30min colación
+    return Math.max(0, Math.round(netHours * 2) / 2); // round to nearest 0.5
+  }, []);
+
+  const computedHours = useMemo(() => calcHours(formStartTime, formEndTime), [formStartTime, formEndTime, calcHours]);
+  const formSchedule = `${formStartTime} - ${formEndTime}`;
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
