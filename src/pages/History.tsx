@@ -144,10 +144,13 @@ export default function History() {
     if (nonCredit.length > 0) {
       autoTable(doc, {
         startY: y + 4,
-        head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Observación']],
-        body: nonCredit.map(e => [
-          e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', e.observation || '-',
-        ]),
+        head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Detalle']],
+        body: nonCredit.map(e => {
+          const detail = e.denominations
+            ? formatDenominations(e.denominations)
+            : (e.observation || '-');
+          return [e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', detail];
+        }),
         theme: 'grid',
         headStyles: { fillColor: primary, textColor: [255, 255, 255] },
         styles: { fontSize: 9 },
