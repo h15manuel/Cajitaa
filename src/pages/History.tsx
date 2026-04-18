@@ -283,7 +283,7 @@ export default function History() {
                                 <p className="text-xs font-medium text-foreground truncate">
                                   {labels[entry.type]} {entry.cashier && `· ${entry.cashier}`} {entry.company && `· ${entry.company}`}
                                   {entry.denominations && Object.keys(entry.denominations).length > 0 && (
-                                    <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                                    <span className="ml-1 text-[10px] text-warning font-semibold">
                                       ({formatDenominations(entry.denominations)})
                                     </span>
                                   )}

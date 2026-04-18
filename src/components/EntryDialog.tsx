@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { EntryType, CLP_DENOMINATIONS } from '@/types';
+import { EntryType } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput, generateId } from '@/lib/format';
 import { ArrowDownCircle, CreditCard, Banknote, Plus } from 'lucide-react';
@@ -34,31 +34,6 @@ export default function EntryDialog({ type, children }: Props) {
   const config = entryConfig[type];
   const isDeposit = type === EntryType.DEPOSIT;
 
-  const denomTotal = useMemo(
-    () => CLP_DENOMINATIONS.reduce((s, d) => s + d * (denominations[d] || 0), 0),
-    [denominations]
-  );
-
-  // For deposits, the amount auto-syncs to denominations total when user is using the picker
-  const effectiveAmount = isDeposit && denomTotal > 0 ? denomTotal : parseCLPInput(amountStr);
-
-  const handleAmountChange = (val: string) => {
-    const nums = val.replace(/\D/g, '');
-    setAmountStr(nums);
-    // If user types manually, clear denominations to avoid mismatch
-    if (isDeposit && Object.keys(denominations).length > 0) {
-      setDenominations({});
-    }
-  };
-
-  const handleDenomChange = (next: Record<number, number>) => {
-    setDenominations(next);
-    if (isDeposit) {
-      const total = CLP_DENOMINATIONS.reduce((s, d) => s + d * (next[d] || 0), 0);
-      setAmountStr(total > 0 ? total.toString() : '');
-    }
-  };
-
   const reset = () => {
     setAmountStr('');
     setCashier('');
@@ -69,7 +44,7 @@ export default function EntryDialog({ type, children }: Props) {
   };
 
   const handleSubmit = () => {
-    const amount = effectiveAmount;
+    const amount = parseCLPInput(amountStr);
     if (amount <= 0) return;
 
     const now = new Date();
@@ -113,7 +88,7 @@ export default function EntryDialog({ type, children }: Props) {
             <Label className="text-muted-foreground text-sm">Monto</Label>
             <Input
               value={amountStr ? formatCLP(parseInt(amountStr)) : ''}
-              onChange={e => handleAmountChange(e.target.value)}
+              onChange={e => setAmountStr(e.target.value.replace(/\D/g, ''))}
               placeholder="$0"
               className="text-2xl font-bold h-14 rounded-2xl bg-secondary border-border text-foreground"
               inputMode="numeric"
@@ -152,7 +127,7 @@ export default function EntryDialog({ type, children }: Props) {
           )}
 
           {isDeposit ? (
-            <DenominationPicker value={denominations} onChange={handleDenomChange} />
+            <DenominationPicker value={denominations} onChange={setDenominations} />
           ) : (
             <div>
               <Label className="text-muted-foreground text-sm">Observación</Label>
