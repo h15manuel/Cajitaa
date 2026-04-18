@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { CashEntry, EntryType, CLP_DENOMINATIONS } from '@/types';
+import { CashEntry, EntryType } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput } from '@/lib/format';
 import { ArrowDownCircle, CreditCard, Banknote, Save } from 'lucide-react';
@@ -30,31 +30,11 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
   const Icon = icons[entry.type];
   const isDeposit = entry.type === EntryType.DEPOSIT;
 
-  const denomTotal = useMemo(
-    () => CLP_DENOMINATIONS.reduce((s, d) => s + d * (denominations[d] || 0), 0),
-    [denominations]
-  );
-
-  const handleAmountChange = (val: string) => {
-    setAmountStr(val.replace(/\D/g, ''));
-    if (isDeposit && Object.keys(denominations).length > 0) {
-      setDenominations({});
-    }
-  };
-
-  const handleDenomChange = (next: Record<number, number>) => {
-    setDenominations(next);
-    if (isDeposit) {
-      const total = CLP_DENOMINATIONS.reduce((s, d) => s + d * (next[d] || 0), 0);
-      setAmountStr(total > 0 ? total.toString() : '');
-    }
-  };
-
   const handleSubmit = () => {
-    const hasDenoms = Object.keys(denominations).length > 0;
-    const amount = isDeposit && hasDenoms ? denomTotal : parseCLPInput(amountStr);
+    const amount = parseCLPInput(amountStr);
     if (amount <= 0) return;
 
+    const hasDenoms = Object.keys(denominations).length > 0;
     editEntry(entry.id, {
       amount,
       company: entry.type === EntryType.CREDIT ? company || undefined : entry.company,
@@ -79,7 +59,7 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
             <Label className="text-muted-foreground text-sm">Monto</Label>
             <Input
               value={amountStr ? formatCLP(parseInt(amountStr)) : ''}
-              onChange={e => handleAmountChange(e.target.value)}
+              onChange={e => setAmountStr(e.target.value.replace(/\D/g, ''))}
               placeholder="$0"
               className="text-2xl font-bold h-14 rounded-2xl bg-secondary border-border text-foreground"
               inputMode="numeric"
@@ -108,7 +88,7 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
           {isDeposit ? (
             <DenominationPicker
               value={denominations}
-              onChange={handleDenomChange}
+              onChange={setDenominations}
               defaultOpen={Object.keys(denominations).length > 0}
             />
           ) : (
