@@ -40,7 +40,7 @@ export default function EntryDialog({ type, children }: Props) {
     setCompany('');
     setObservation('');
     setCashCredit(false);
-    setDenominations({});
+    setDenomination(undefined);
   };
 
   const handleSubmit = () => {
@@ -48,7 +48,6 @@ export default function EntryDialog({ type, children }: Props) {
     if (amount <= 0) return;
 
     const now = new Date();
-    const hasDenoms = Object.keys(denominations).length > 0;
     addEntry({
       id: generateId(),
       type,
@@ -57,7 +56,7 @@ export default function EntryDialog({ type, children }: Props) {
       company: config.needsCompany ? company : undefined,
       observation: !isDeposit && observation ? observation : undefined,
       cashCredit: type === EntryType.CREDIT ? cashCredit : undefined,
-      denominations: isDeposit && hasDenoms ? denominations : undefined,
+      denominations: isDeposit ? denomination : undefined,
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().slice(0, 5),
     });
