@@ -282,6 +282,11 @@ export default function History() {
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-foreground truncate">
                                   {labels[entry.type]} {entry.cashier && `· ${entry.cashier}`} {entry.company && `· ${entry.company}`}
+                                  {entry.denominations && Object.keys(entry.denominations).length > 0 && (
+                                    <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                                      ({formatDenominations(entry.denominations)})
+                                    </span>
+                                  )}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground">{entry.time}</p>
                               </div>
