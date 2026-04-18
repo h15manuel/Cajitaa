@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP } from '@/lib/format';
-import { EntryType, ShiftRecord, CashEntry } from '@/types';
+import { EntryType, ShiftRecord, CashEntry, formatDenominations } from '@/types';
 import { ArrowDownCircle, CreditCard, Banknote, ChevronDown, ChevronUp, Clock, Share2, Search, FileDown, History as HistoryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
