@@ -12,8 +12,23 @@ export interface CashEntry {
   company?: string;
   observation?: string;
   cashCredit?: boolean; // crédito en efectivo – se resta de la meta
+  denominations?: Record<number, number>; // depósito: {20000: 2, 10000: 1, ...}
   date: string; // ISO string
   time: string; // HH:mm
+}
+
+export const CLP_DENOMINATIONS = [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 10] as const;
+
+export function formatDenominations(denoms?: Record<number, number>): string {
+  if (!denoms) return '';
+  const parts = CLP_DENOMINATIONS
+    .filter(d => (denoms[d] || 0) > 0)
+    .map(d => {
+      const count = denoms[d];
+      const label = d >= 1000 ? `${d / 1000}k` : `${d}`;
+      return `${label}×${count}`;
+    });
+  return parts.join(', ');
 }
 
 export interface Company {
