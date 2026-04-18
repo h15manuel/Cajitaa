@@ -86,9 +86,9 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
 
           {isDeposit ? (
             <DenominationPicker
-              value={denominations}
-              onChange={setDenominations}
-              defaultOpen={Object.keys(denominations).length > 0}
+              value={denomination}
+              onChange={setDenomination}
+              defaultOpen={!!denomination}
             />
           ) : (
             <div>
