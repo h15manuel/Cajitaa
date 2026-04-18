@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP } from '@/lib/format';
-import { EntryType, ShiftRecord } from '@/types';
+import { EntryType, ShiftRecord, CashEntry } from '@/types';
 import { ArrowDownCircle, CreditCard, Banknote, ChevronDown, ChevronUp, Clock, Share2, Search, FileDown, History as HistoryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,45 +19,63 @@ export default function History() {
   const statusLabels = { cuadrada: 'CUADRADA', sobrante: 'SOBRANTE', faltante: 'FALTANTE' };
   const statusColors = { cuadrada: 'text-green-500', sobrante: 'text-blue-500', faltante: 'text-destructive' };
 
-  // All shifts sorted newest first
   const allShifts = useMemo(() =>
     [...state.shiftHistory].sort((a, b) => new Date(b.closedAt).getTime() - new Date(a.closedAt).getTime()),
     [state.shiftHistory]
   );
 
-  // Filter by search term (matches formatted date, month name, or day number)
   const filtered = useMemo(() => {
     if (!search.trim()) return allShifts;
     const q = search.toLowerCase().trim();
     return allShifts.filter(shift => {
       const d = new Date(shift.closedAt);
       const formatted = format(d, "EEEE d 'de' MMMM yyyy HH:mm", { locale: es }).toLowerCase();
-      const dateStr = shift.date; // yyyy-mm-dd
-      return formatted.includes(q) || dateStr.includes(q);
+      return formatted.includes(q) || shift.date.includes(q);
     });
   }, [allShifts, search]);
 
+  // Derive new metrics from entries (for backward compat with old shift records)
+  const computeMetrics = (shift: ShiftRecord) => {
+    const credits = shift.entries.filter(e => e.type === EntryType.CREDIT);
+    const cashCredits = credits.filter(e => e.cashCredit);
+    const cashCreditTotal = cashCredits.reduce((s, e) => s + e.amount, 0);
+    const creditsTotal = credits.reduce((s, e) => s + e.amount, 0);
+    const totalidad = shift.depositsTotal + shift.cashDrawer + cashCreditTotal;
+    return { credits, cashCredits, cashCreditTotal, creditsTotal, totalidad };
+  };
+
   const shareWhatsApp = (shift: ShiftRecord) => {
     const closed = format(new Date(shift.closedAt), "d/MM/yyyy HH:mm", { locale: es });
+    const m = computeMetrics(shift);
     const lines = [
       `📋 *Cierre de Turno*`,
       `📅 ${closed}`,
       ``,
       `💰 *Monto Z:* ${formatCLP(shift.zAmount)}`,
       `🪙 *Propinas:* ${formatCLP(shift.tipsTotal)}`,
+      `💳 *Créd. Efectivo:* ${formatCLP(m.cashCreditTotal)}`,
       `🎯 *Meta:* ${formatCLP(shift.meta)}`,
       ``,
       `📥 *Depósitos:* ${formatCLP(shift.depositsTotal)}`,
       `🗄️ *Gaveta:* ${formatCLP(shift.cashDrawer)}`,
       `💵 *Efectivo Real:* ${formatCLP(shift.efectivoReal)}`,
+      `📦 *Totalidad a entregar:* ${formatCLP(m.totalidad)}`,
       ``,
       `📊 *Diferencia:* ${formatCLP(shift.diferencia)}`,
       `✅ *Estado:* ${statusLabels[shift.status]}`,
     ];
-    if (shift.entries.length > 0) {
-      lines.push(``, `📝 *Movimientos (${shift.entries.length}):*`);
-      shift.entries.forEach(e => {
-        const label = labels[e.type as EntryType] || e.type;
+    if (m.credits.length > 0) {
+      lines.push(``, `💳 *Créditos (${m.credits.length}) · Total ${formatCLP(m.creditsTotal)}*`);
+      m.credits.forEach(e => {
+        const tag = e.cashCredit ? ' (Efectivo)' : '';
+        lines.push(`  • ${e.company || 'Crédito'}${tag} — ${formatCLP(e.amount)}`);
+      });
+    }
+    const nonCredit = shift.entries.filter(e => e.type !== EntryType.CREDIT);
+    if (nonCredit.length > 0) {
+      lines.push(``, `📝 *Movimientos (${nonCredit.length}):*`);
+      nonCredit.forEach(e => {
+        const label = labels[e.type] || e.type;
         const who = e.cashier || e.company || '';
         lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}`);
       });
@@ -68,10 +86,12 @@ export default function History() {
 
   const exportPDF = async (shift: ShiftRecord) => {
     const { default: jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
+    const autoTableMod: any = await import('jspdf-autotable');
+    const autoTable = autoTableMod.default || autoTableMod;
     const doc = new jsPDF();
-    const primary = [26, 188, 156];
+    const primary: [number, number, number] = [26, 188, 156];
     const closed = format(new Date(shift.closedAt), "d 'de' MMMM yyyy HH:mm", { locale: es });
+    const m = computeMetrics(shift);
 
     doc.setFillColor(primary[0], primary[1], primary[2]);
     doc.rect(0, 0, 210, 35, 'F');
@@ -83,13 +103,15 @@ export default function History() {
 
     doc.setTextColor(60, 60, 60);
     let y = 45;
-    const summary = [
+    const summary: [string, string][] = [
       ['Monto Z', formatCLP(shift.zAmount)],
       ['Propinas', formatCLP(shift.tipsTotal)],
+      ['Créd. Efectivo', formatCLP(m.cashCreditTotal)],
       ['Meta', formatCLP(shift.meta)],
       ['Depósitos', formatCLP(shift.depositsTotal)],
       ['Gaveta', formatCLP(shift.cashDrawer)],
       ['Efectivo Real', formatCLP(shift.efectivoReal)],
+      ['Totalidad a entregar', formatCLP(m.totalidad)],
       ['Diferencia', formatCLP(shift.diferencia)],
       ['Estado', statusLabels[shift.status]],
     ];
@@ -99,14 +121,32 @@ export default function History() {
       y += 6;
     });
 
-    if (shift.entries.length > 0) {
-      const tableData = shift.entries.map(e => [
-        e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', e.observation || '-',
-      ]);
-      (doc as any).autoTable({
+    if (m.credits.length > 0) {
+      autoTable(doc, {
+        startY: y + 4,
+        head: [['Hora', 'Empresa', 'Tipo', 'Monto']],
+        body: m.credits.map(e => [
+          e.time,
+          e.company || '-',
+          e.cashCredit ? 'Efectivo' : 'Cuenta',
+          formatCLP(e.amount),
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: primary, textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        didDrawPage: (data: any) => { y = data.cursor.y; },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
+    }
+
+    const nonCredit = shift.entries.filter(e => e.type !== EntryType.CREDIT);
+    if (nonCredit.length > 0) {
+      autoTable(doc, {
         startY: y + 4,
         head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Observación']],
-        body: tableData,
+        body: nonCredit.map(e => [
+          e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', e.observation || '-',
+        ]),
         theme: 'grid',
         headStyles: { fillColor: primary, textColor: [255, 255, 255] },
         styles: { fontSize: 9 },
@@ -117,7 +157,6 @@ export default function History() {
 
   return (
     <div className="space-y-4 pt-2 max-w-lg mx-auto">
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -128,12 +167,13 @@ export default function History() {
         />
       </div>
 
-      {/* Shifts list */}
       {filtered.length > 0 ? (
         <div className="space-y-2">
           {filtered.map(shift => {
             const isExpanded = expandedShift === shift.id;
             const closedDate = new Date(shift.closedAt);
+            const m = computeMetrics(shift);
+            const nonCredit = shift.entries.filter(e => e.type !== EntryType.CREDIT);
             return (
               <div key={shift.id} className="m3-surface overflow-hidden animate-slide-up">
                 <button
@@ -163,15 +203,17 @@ export default function History() {
 
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-                    {/* Summary grid */}
+                    {/* Summary grid - aligned with new dashboard model */}
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { label: 'Monto Z', value: formatCLP(shift.zAmount), color: 'text-foreground' },
                         { label: 'Propinas', value: formatCLP(shift.tipsTotal), color: 'text-warning' },
                         { label: 'Meta', value: formatCLP(shift.meta), color: 'text-foreground' },
-                        { label: 'Efectivo Real', value: formatCLP(shift.efectivoReal), color: 'text-foreground' },
+                        { label: 'Totalidad', value: formatCLP(m.totalidad), color: 'text-foreground' },
                         { label: 'Depósitos', value: formatCLP(shift.depositsTotal), color: 'text-primary' },
                         { label: 'Gaveta', value: formatCLP(shift.cashDrawer), color: 'text-foreground' },
+                        { label: 'Créd. Efectivo', value: formatCLP(m.cashCreditTotal), color: 'text-info' },
+                        { label: 'Efectivo Real', value: formatCLP(shift.efectivoReal), color: 'text-foreground' },
                       ].map(item => (
                         <div key={item.label} className="bg-secondary/50 rounded-2xl p-3">
                           <p className="text-[10px] text-muted-foreground uppercase">{item.label}</p>
@@ -180,7 +222,6 @@ export default function History() {
                       ))}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -200,11 +241,36 @@ export default function History() {
                       </Button>
                     </div>
 
-                    {/* Entries */}
-                    {shift.entries.length > 0 && (
+                    {/* Credits section */}
+                    {m.credits.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            Créditos · {m.credits.length}
+                          </p>
+                          <p className="text-xs font-bold text-info">{formatCLP(m.creditsTotal)}</p>
+                        </div>
+                        {m.credits.map(entry => (
+                          <div key={entry.id} className="flex items-center gap-3 bg-secondary/30 rounded-2xl p-2.5">
+                            <CreditCard className="w-4 h-4 text-info" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-foreground truncate">
+                                {entry.company || 'Crédito'}
+                                {entry.cashCredit && <span className="ml-1 text-[9px] text-warning font-semibold">(Efectivo)</span>}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">{entry.time}</p>
+                            </div>
+                            <p className="text-xs font-bold text-foreground">{formatCLP(entry.amount)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Other movements */}
+                    {nonCredit.length > 0 && (
                       <div className="space-y-1.5">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Movimientos</p>
-                        {shift.entries.map(entry => {
+                        {nonCredit.map(entry => {
                           const Icon = icons[entry.type];
                           return (
                             <div key={entry.id} className="flex items-center gap-3 bg-secondary/30 rounded-2xl p-2.5">
