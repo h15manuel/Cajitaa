@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput } from '@/lib/format';
-import { EntryType, CashEntry } from '@/types';
+import { EntryType, CashEntry, formatDenominations } from '@/types';
 import QuickCountModal from '@/components/QuickCountModal';
 import EntryDialog from '@/components/EntryDialog';
 import EditEntryDialog from '@/components/EditEntryDialog';
