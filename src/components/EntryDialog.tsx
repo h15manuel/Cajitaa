@@ -29,7 +29,7 @@ export default function EntryDialog({ type, children }: Props) {
   const [company, setCompany] = useState('');
   const [observation, setObservation] = useState('');
   const [cashCredit, setCashCredit] = useState(false);
-  const [denominations, setDenominations] = useState<Record<number, number>>({});
+  const [denomination, setDenomination] = useState<number | undefined>(undefined);
 
   const config = entryConfig[type];
   const isDeposit = type === EntryType.DEPOSIT;
@@ -40,7 +40,7 @@ export default function EntryDialog({ type, children }: Props) {
     setCompany('');
     setObservation('');
     setCashCredit(false);
-    setDenominations({});
+    setDenomination(undefined);
   };
 
   const handleSubmit = () => {
@@ -48,7 +48,6 @@ export default function EntryDialog({ type, children }: Props) {
     if (amount <= 0) return;
 
     const now = new Date();
-    const hasDenoms = Object.keys(denominations).length > 0;
     addEntry({
       id: generateId(),
       type,
@@ -57,7 +56,7 @@ export default function EntryDialog({ type, children }: Props) {
       company: config.needsCompany ? company : undefined,
       observation: !isDeposit && observation ? observation : undefined,
       cashCredit: type === EntryType.CREDIT ? cashCredit : undefined,
-      denominations: isDeposit && hasDenoms ? denominations : undefined,
+      denominations: isDeposit ? denomination : undefined,
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().slice(0, 5),
     });
@@ -127,7 +126,7 @@ export default function EntryDialog({ type, children }: Props) {
           )}
 
           {isDeposit ? (
-            <DenominationPicker value={denominations} onChange={setDenominations} />
+            <DenominationPicker value={denomination} onChange={setDenomination} />
           ) : (
             <div>
               <Label className="text-muted-foreground text-sm">Observación</Label>

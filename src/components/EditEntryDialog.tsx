@@ -25,7 +25,7 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
   const [company, setCompany] = useState(entry.company || '');
   const [observation, setObservation] = useState(entry.observation || '');
   const [cashCredit, setCashCredit] = useState(entry.cashCredit || false);
-  const [denominations, setDenominations] = useState<Record<number, number>>(entry.denominations || {});
+  const [denomination, setDenomination] = useState<number | undefined>(entry.denominations);
 
   const Icon = icons[entry.type];
   const isDeposit = entry.type === EntryType.DEPOSIT;
@@ -34,13 +34,12 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
     const amount = parseCLPInput(amountStr);
     if (amount <= 0) return;
 
-    const hasDenoms = Object.keys(denominations).length > 0;
     editEntry(entry.id, {
       amount,
       company: entry.type === EntryType.CREDIT ? company || undefined : entry.company,
       observation: !isDeposit ? (observation || undefined) : entry.observation,
       cashCredit: entry.type === EntryType.CREDIT ? cashCredit : undefined,
-      denominations: isDeposit ? (hasDenoms ? denominations : undefined) : entry.denominations,
+      denominations: isDeposit ? denomination : entry.denominations,
     });
     onOpenChange(false);
   };
@@ -87,9 +86,9 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
 
           {isDeposit ? (
             <DenominationPicker
-              value={denominations}
-              onChange={setDenominations}
-              defaultOpen={Object.keys(denominations).length > 0}
+              value={denomination}
+              onChange={setDenomination}
+              defaultOpen={!!denomination}
             />
           ) : (
             <div>
