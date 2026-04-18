@@ -222,11 +222,11 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {labels[entry.type]} {entry.company && `· ${entry.company}`}
-                        {entry.denominations && Object.keys(entry.denominations).length > 0 && (
+                        {entry.denominations ? (
                           <span className="ml-1 text-[10px] text-warning font-semibold">
                             ({formatDenominations(entry.denominations)})
                           </span>
-                        )}
+                        ) : null}
                       </p>
                       <p className="text-[10px] text-muted-foreground">{entry.time}</p>
                     </div>
