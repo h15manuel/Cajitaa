@@ -77,7 +77,8 @@ export default function History() {
       nonCredit.forEach(e => {
         const label = labels[e.type] || e.type;
         const who = e.cashier || e.company || '';
-        lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}`);
+        const denom = e.denominations ? ` (${formatDenominations(e.denominations)})` : '';
+        lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}${denom}`);
       });
     }
     const text = encodeURIComponent(lines.join('\n'));
