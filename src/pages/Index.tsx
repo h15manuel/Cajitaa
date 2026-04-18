@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput } from '@/lib/format';
-import { EntryType, CashEntry } from '@/types';
+import { EntryType, CashEntry, formatDenominations } from '@/types';
 import QuickCountModal from '@/components/QuickCountModal';
 import EntryDialog from '@/components/EntryDialog';
 import EditEntryDialog from '@/components/EditEntryDialog';
@@ -222,6 +222,11 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {labels[entry.type]} {entry.company && `· ${entry.company}`}
+                        {entry.denominations && Object.keys(entry.denominations).length > 0 && (
+                          <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                            ({formatDenominations(entry.denominations)})
+                          </span>
+                        )}
                       </p>
                       <p className="text-[10px] text-muted-foreground">{entry.time}</p>
                     </div>

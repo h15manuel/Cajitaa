@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { CashEntry, EntryType } from '@/types';
+import { CashEntry, EntryType, CLP_DENOMINATIONS } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput } from '@/lib/format';
 import { ArrowDownCircle, CreditCard, Banknote, Save } from 'lucide-react';
+import DenominationPicker from './DenominationPicker';
 
 const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
 const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
@@ -24,29 +25,49 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
   const [company, setCompany] = useState(entry.company || '');
   const [observation, setObservation] = useState(entry.observation || '');
   const [cashCredit, setCashCredit] = useState(entry.cashCredit || false);
+  const [denominations, setDenominations] = useState<Record<number, number>>(entry.denominations || {});
 
   const Icon = icons[entry.type];
+  const isDeposit = entry.type === EntryType.DEPOSIT;
+
+  const denomTotal = useMemo(
+    () => CLP_DENOMINATIONS.reduce((s, d) => s + d * (denominations[d] || 0), 0),
+    [denominations]
+  );
 
   const handleAmountChange = (val: string) => {
     setAmountStr(val.replace(/\D/g, ''));
+    if (isDeposit && Object.keys(denominations).length > 0) {
+      setDenominations({});
+    }
+  };
+
+  const handleDenomChange = (next: Record<number, number>) => {
+    setDenominations(next);
+    if (isDeposit) {
+      const total = CLP_DENOMINATIONS.reduce((s, d) => s + d * (next[d] || 0), 0);
+      setAmountStr(total > 0 ? total.toString() : '');
+    }
   };
 
   const handleSubmit = () => {
-    const amount = parseCLPInput(amountStr);
+    const hasDenoms = Object.keys(denominations).length > 0;
+    const amount = isDeposit && hasDenoms ? denomTotal : parseCLPInput(amountStr);
     if (amount <= 0) return;
 
     editEntry(entry.id, {
       amount,
       company: entry.type === EntryType.CREDIT ? company || undefined : entry.company,
-      observation: observation || undefined,
+      observation: !isDeposit ? (observation || undefined) : entry.observation,
       cashCredit: entry.type === EntryType.CREDIT ? cashCredit : undefined,
+      denominations: isDeposit ? (hasDenoms ? denominations : undefined) : entry.denominations,
     });
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl bg-card border-border max-w-sm mx-auto">
+      <DialogContent className="rounded-3xl bg-card border-border max-w-sm mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <Icon className="w-5 h-5 text-primary" />
@@ -84,15 +105,23 @@ export default function EditEntryDialog({ entry, open, onOpenChange }: Props) {
             </div>
           )}
 
-          <div>
-            <Label className="text-muted-foreground text-sm">Observación</Label>
-            <Input
-              value={observation}
-              onChange={e => setObservation(e.target.value)}
-              placeholder="Opcional"
-              className="rounded-2xl bg-secondary border-border"
+          {isDeposit ? (
+            <DenominationPicker
+              value={denominations}
+              onChange={handleDenomChange}
+              defaultOpen={Object.keys(denominations).length > 0}
             />
-          </div>
+          ) : (
+            <div>
+              <Label className="text-muted-foreground text-sm">Observación</Label>
+              <Input
+                value={observation}
+                onChange={e => setObservation(e.target.value)}
+                placeholder="Opcional"
+                className="rounded-2xl bg-secondary border-border"
+              />
+            </div>
+          )}
 
           <Button
             onClick={handleSubmit}

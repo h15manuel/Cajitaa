@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { EntryType } from '@/types';
+import { EntryType, CLP_DENOMINATIONS } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP, parseCLPInput, generateId } from '@/lib/format';
 import { ArrowDownCircle, CreditCard, Banknote, Plus } from 'lucide-react';
+import DenominationPicker from './DenominationPicker';
 
 const entryConfig = {
   [EntryType.DEPOSIT]: { label: 'Depósito', icon: ArrowDownCircle, needsCashier: false, needsCompany: false },
@@ -28,41 +29,70 @@ export default function EntryDialog({ type, children }: Props) {
   const [company, setCompany] = useState('');
   const [observation, setObservation] = useState('');
   const [cashCredit, setCashCredit] = useState(false);
+  const [denominations, setDenominations] = useState<Record<number, number>>({});
 
   const config = entryConfig[type];
+  const isDeposit = type === EntryType.DEPOSIT;
+
+  const denomTotal = useMemo(
+    () => CLP_DENOMINATIONS.reduce((s, d) => s + d * (denominations[d] || 0), 0),
+    [denominations]
+  );
+
+  // For deposits, the amount auto-syncs to denominations total when user is using the picker
+  const effectiveAmount = isDeposit && denomTotal > 0 ? denomTotal : parseCLPInput(amountStr);
 
   const handleAmountChange = (val: string) => {
     const nums = val.replace(/\D/g, '');
     setAmountStr(nums);
+    // If user types manually, clear denominations to avoid mismatch
+    if (isDeposit && Object.keys(denominations).length > 0) {
+      setDenominations({});
+    }
+  };
+
+  const handleDenomChange = (next: Record<number, number>) => {
+    setDenominations(next);
+    if (isDeposit) {
+      const total = CLP_DENOMINATIONS.reduce((s, d) => s + d * (next[d] || 0), 0);
+      setAmountStr(total > 0 ? total.toString() : '');
+    }
+  };
+
+  const reset = () => {
+    setAmountStr('');
+    setCashier('');
+    setCompany('');
+    setObservation('');
+    setCashCredit(false);
+    setDenominations({});
   };
 
   const handleSubmit = () => {
-    const amount = parseCLPInput(amountStr);
+    const amount = effectiveAmount;
     if (amount <= 0) return;
 
     const now = new Date();
+    const hasDenoms = Object.keys(denominations).length > 0;
     addEntry({
       id: generateId(),
       type,
       amount,
       cashier: config.needsCashier ? cashier : undefined,
       company: config.needsCompany ? company : undefined,
-      observation: observation || undefined,
+      observation: !isDeposit && observation ? observation : undefined,
       cashCredit: type === EntryType.CREDIT ? cashCredit : undefined,
+      denominations: isDeposit && hasDenoms ? denominations : undefined,
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().slice(0, 5),
     });
 
-    setAmountStr('');
-    setCashier('');
-    setCompany('');
-    setObservation('');
-    setCashCredit(false);
+    reset();
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" className="rounded-3xl gap-2 h-12">
@@ -71,7 +101,7 @@ export default function EntryDialog({ type, children }: Props) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="rounded-3xl bg-card border-border max-w-sm mx-auto">
+      <DialogContent className="rounded-3xl bg-card border-border max-w-sm mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <config.icon className="w-5 h-5 text-primary" />
@@ -121,15 +151,19 @@ export default function EntryDialog({ type, children }: Props) {
             </div>
           )}
 
-          <div>
-            <Label className="text-muted-foreground text-sm">Observación</Label>
-            <Input
-              value={observation}
-              onChange={e => setObservation(e.target.value)}
-              placeholder="Opcional"
-              className="rounded-2xl bg-secondary border-border"
-            />
-          </div>
+          {isDeposit ? (
+            <DenominationPicker value={denominations} onChange={handleDenomChange} />
+          ) : (
+            <div>
+              <Label className="text-muted-foreground text-sm">Observación</Label>
+              <Input
+                value={observation}
+                onChange={e => setObservation(e.target.value)}
+                placeholder="Opcional"
+                className="rounded-2xl bg-secondary border-border"
+              />
+            </div>
+          )}
 
           <Button
             onClick={handleSubmit}

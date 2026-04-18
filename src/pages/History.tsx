@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { formatCLP } from '@/lib/format';
-import { EntryType, ShiftRecord, CashEntry } from '@/types';
+import { EntryType, ShiftRecord, CashEntry, formatDenominations } from '@/types';
 import { ArrowDownCircle, CreditCard, Banknote, ChevronDown, ChevronUp, Clock, Share2, Search, FileDown, History as HistoryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,8 @@ export default function History() {
       nonCredit.forEach(e => {
         const label = labels[e.type] || e.type;
         const who = e.cashier || e.company || '';
-        lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}`);
+        const denom = e.denominations ? ` (${formatDenominations(e.denominations)})` : '';
+        lines.push(`  • ${label} ${formatCLP(e.amount)}${who ? ` — ${who}` : ''}${denom}`);
       });
     }
     const text = encodeURIComponent(lines.join('\n'));
@@ -143,10 +144,13 @@ export default function History() {
     if (nonCredit.length > 0) {
       autoTable(doc, {
         startY: y + 4,
-        head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Observación']],
-        body: nonCredit.map(e => [
-          e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', e.observation || '-',
-        ]),
+        head: [['Hora', 'Tipo', 'Monto', 'Responsable', 'Detalle']],
+        body: nonCredit.map(e => {
+          const detail = e.denominations
+            ? formatDenominations(e.denominations)
+            : (e.observation || '-');
+          return [e.time, labels[e.type] || e.type, formatCLP(e.amount), e.cashier || e.company || '-', detail];
+        }),
         theme: 'grid',
         headStyles: { fillColor: primary, textColor: [255, 255, 255] },
         styles: { fontSize: 9 },
@@ -278,6 +282,11 @@ export default function History() {
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-foreground truncate">
                                   {labels[entry.type]} {entry.cashier && `· ${entry.cashier}`} {entry.company && `· ${entry.company}`}
+                                  {entry.denominations && Object.keys(entry.denominations).length > 0 && (
+                                    <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                                      ({formatDenominations(entry.denominations)})
+                                    </span>
+                                  )}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground">{entry.time}</p>
                               </div>
