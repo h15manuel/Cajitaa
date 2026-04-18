@@ -126,7 +126,7 @@ export default function EntryDialog({ type, children }: Props) {
           )}
 
           {isDeposit ? (
-            <DenominationPicker value={denominations} onChange={setDenominations} />
+            <DenominationPicker value={denomination} onChange={setDenomination} />
           ) : (
             <div>
               <Label className="text-muted-foreground text-sm">Observación</Label>
