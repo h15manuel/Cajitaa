@@ -29,7 +29,7 @@ export default function EntryDialog({ type, children }: Props) {
   const [company, setCompany] = useState('');
   const [observation, setObservation] = useState('');
   const [cashCredit, setCashCredit] = useState(false);
-  const [denominations, setDenominations] = useState<Record<number, number>>({});
+  const [denomination, setDenomination] = useState<number | undefined>(undefined);
 
   const config = entryConfig[type];
   const isDeposit = type === EntryType.DEPOSIT;
