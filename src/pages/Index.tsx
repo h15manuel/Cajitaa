@@ -207,33 +207,40 @@ export default function Dashboard() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-3 pb-3 space-y-1.5">
-              {todayEntries.filter(e => e.type !== EntryType.CREDIT).slice().reverse().map(entry => {
-                const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
-                const colors = { DEPOSIT: 'text-primary', TIP: 'text-warning', CREDIT: 'text-info' };
-                const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
-                const Icon = icons[entry.type];
-                return (
-                  <div
-                    key={entry.id}
-                    className="flex items-center gap-2.5 bg-secondary/50 rounded-xl p-2 cursor-pointer hover:bg-secondary/80 transition-colors"
-                    onClick={() => setEditingEntry(entry)}
-                  >
-                    <Icon className={`w-4 h-4 ${colors[entry.type]}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {labels[entry.type]} {entry.company && `· ${entry.company}`}
-                        {entry.denominations ? (
-                          <span className="ml-1 text-[10px] text-warning font-semibold">
-                            ({formatDenominations(entry.denominations)})
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">{entry.time}</p>
+              {(() => {
+                const depositOrder = new Map<string, number>();
+                todayEntries
+                  .filter(e => e.type === EntryType.DEPOSIT)
+                  .forEach((e, i) => depositOrder.set(e.id, i + 1));
+                return todayEntries.filter(e => e.type !== EntryType.CREDIT).slice().reverse().map(entry => {
+                  const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
+                  const colors = { DEPOSIT: 'text-primary', TIP: 'text-warning', CREDIT: 'text-info' };
+                  const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
+                  const Icon = icons[entry.type];
+                  const depNum = entry.type === EntryType.DEPOSIT ? depositOrder.get(entry.id) : undefined;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-2.5 bg-secondary/50 rounded-xl p-2 cursor-pointer hover:bg-secondary/80 transition-colors"
+                      onClick={() => setEditingEntry(entry)}
+                    >
+                      <Icon className={`w-4 h-4 ${colors[entry.type]}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {labels[entry.type]}{depNum ? ` ${depNum}` : ''} {entry.company && `· ${entry.company}`}
+                          {entry.denominations ? (
+                            <span className="ml-1 text-[10px] text-warning font-semibold">
+                              ({formatDenominations(entry.denominations)})
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{entry.time}</p>
+                      </div>
+                      <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
                     </div>
-                    <p className="text-sm font-bold text-foreground shield-blur">{formatCLP(entry.amount)}</p>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </CollapsibleContent>
         </Collapsible>
