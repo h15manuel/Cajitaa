@@ -212,7 +212,7 @@ export default function Dashboard() {
                 todayEntries
                   .filter(e => e.type === EntryType.DEPOSIT)
                   .forEach((e, i) => depositOrder.set(e.id, i + 1));
-                return todayEntries.filter(e => e.type !== EntryType.CREDIT).slice().reverse().map(entry => {
+                return todayEntries.filter(e => e.type !== EntryType.CREDIT).map(entry => {
                   const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
                   const colors = { DEPOSIT: 'text-primary', TIP: 'text-warning', CREDIT: 'text-info' };
                   const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
