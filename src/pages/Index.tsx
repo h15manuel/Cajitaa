@@ -108,7 +108,7 @@ export default function Dashboard() {
       {/* Z Amount + Gaveta side by side */}
       <div className="grid grid-cols-2 gap-2">
         <div className="m3-surface-elevated p-3 text-center">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Monto Z</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Desglose</p>
           <input
             value={zInput ? formatCLP(parseInt(zInput)) : ''}
             onChange={e => handleZChange(e.target.value)}
@@ -128,12 +128,12 @@ export default function Dashboard() {
           <p className="text-[9px] text-muted-foreground leading-tight">Z - Propinas - Créd. Efect.</p>
         </div>
         <div className="m3-surface p-3 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Totalidad</p></p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Dinero</p>
           <p className="text-xl font-bold text-foreground shield-blur mt-1">{formatCLP(depositsTotal + state.cashDrawer + cashCreditTotal)}</p>
-          <p className="text-[9px] text-muted-foreground leading-tight">Depósitos + Gaveta + Créd. Efect.</p>
+          <p className="text-[9px] text-muted-foreground leading-tight">Avances + Caja Chica + Créditos</p>
         </div>
         <div className="m3-surface p-3 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Depósitos</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Avances</p>
           <p className="text-xl font-bold text-primary shield-blur mt-1">{formatCLP(depositsTotal)}</p>
         </div>
         <div className="m3-surface p-3 text-center">
@@ -141,7 +141,7 @@ export default function Dashboard() {
           <p className="text-xl font-bold text-warning shield-blur mt-1">{formatCLP(state.tipsTotal)}</p>
         </div>
         <div className="m3-surface p-3 col-span-2 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Créd. Efectivo</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Créditos</p>
           <p className="text-xl font-bold text-info shield-blur mt-1">{formatCLP(cashCreditTotal)}</p>
           <p className="text-[9px] text-muted-foreground leading-tight">Se descuenta de la Meta</p>
         </div>
