@@ -90,7 +90,7 @@ export default function Dashboard() {
   };
 
   const sc = statusConfig[status];
-  const todayEntries = state.entries.filter(e => e.date === new Date().toISOString().split('T')[0]);
+  const todayEntries = state.entries;
 
   return (
     <div className="space-y-2 pt-1 max-w-lg mx-auto">
@@ -207,7 +207,7 @@ export default function Dashboard() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-3 pb-3 space-y-1.5">
-              {todayEntries.filter(e => e.type !== EntryType.CREDIT).slice(-5).reverse().map(entry => {
+              {todayEntries.filter(e => e.type !== EntryType.CREDIT).slice().reverse().map(entry => {
                 const icons = { DEPOSIT: ArrowDownCircle, TIP: Banknote, CREDIT: CreditCard };
                 const colors = { DEPOSIT: 'text-primary', TIP: 'text-warning', CREDIT: 'text-info' };
                 const labels = { DEPOSIT: 'Depósito', TIP: 'Propina', CREDIT: 'Crédito' };
