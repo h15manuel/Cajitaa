@@ -90,7 +90,7 @@ export default function Dashboard() {
   };
 
   const sc = statusConfig[status];
-  const todayEntries = state.entries.filter(e => e.date === new Date().toISOString().split('T')[0]);
+  const todayEntries = state.entries;
 
   return (
     <div className="space-y-2 pt-1 max-w-lg mx-auto">
