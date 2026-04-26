@@ -50,7 +50,7 @@ export default function QuickCountModal() {
       <DialogTrigger asChild>
         <button className="m3-surface-elevated p-3 w-full text-center cursor-pointer hover:border-primary/40 transition-colors">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
-            Gaveta
+            Total Caja Chica
             <Calculator className="w-4 h-4 text-primary" />
           </p>
           <p className="text-2xl font-bold text-foreground shield-blur mt-1">{formatCLP(state.cashDrawer)}</p>
